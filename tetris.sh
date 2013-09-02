@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Tetris game written in pure bash
+#
+# I tried to mimic as close as possible original tetris game
+# which was implemented on old soviet DVK computers
+#
+# Videos of this tetris can be found here:
+#
+# http://www.youtube.com/watch?v=O0gAgQQHFcQ
+# http://www.youtube.com/watch?v=iIQc1F3UuV4
+
 set -u # non initialized variable is an error
 
 # 2 signals are used: SIGUSR1 to decrease delay after level up and SIGUSR2 to quit
@@ -19,8 +29,8 @@ DROP=5
 TOGGLE_HELP=6
 TOGGLE_NEXT=7
 
-# initial delay between piece movements
-DELAY=1
+DELAY=1          # initial delay between piece movements
+DELAY_FACTOR=0.8 # this value controld delay decrease for each level up
 
 # Location and size of playfield
 PLAYFIELD_W=10
@@ -40,9 +50,11 @@ HELP_Y=1
 NEXT_X=14
 NEXT_Y=11
 
+# Location of "game over" in the end of the game
 GAMEOVER_X=1
 GAMEOVER_Y=$((PLAYFIELD_H + 3))
 
+# Intervals after which game level (and game speed) is increased 
 LEVEL_UP=20
 
 no_color=true    # do we use color or not
@@ -95,7 +107,7 @@ set_bold() {
 }
 
 # playfield is 1-dimensional array, data is stored as follows:
-# [ a11, a12, ... a1Y, a21, a22, ... a2Y, ... aX1, aX2, ... aXY]
+# [ a11, a21, ... aX1, a12, a22, ... aX2, ... a1Y, a2Y, ... aXY]
 #   |<  1st line   >|  |<  2nd line   >|  ... |<  last line  >|
 # X is PLAYFIELD_W, Y is PLAYFIELD_H
 # each array element contains cell color value or -1 if cell is empty
@@ -123,11 +135,15 @@ redraw_playfield() {
 }
 
 update_score() {
+    # Arguments: 1 - number of completed lines
     ((lines_completed += $1))
+    # Unfortunately I don't know scoring algorithm of original tetris
+    # Here score is incremented with squared number of lines completed
+    # this seems reasonable since it takes more efforts to complete several lines at once
     ((score += ($1 * $1)))
-    if (( score > LEVEL_UP * level)) ; then
-        ((level++))
-        pkill --full --signal SIGUSR1 "/bin/bash $0"
+    if (( score > LEVEL_UP * level)) ; then          # if level should be increased
+        ((level++))                                  # increment level
+        pkill --full --signal SIGUSR1 "/bin/bash $0" # and send SIGUSR1 signal to all instances of this script (please see ticker for more details)
     fi
     xyprint $SCORE_X $SCORE_Y         "Lines completed: $lines_completed"
     xyprint $SCORE_X $((SCORE_Y + 1)) "Level:           $level"
@@ -140,11 +156,12 @@ help=(
 "      s: up"
 "a: left,  d: right"
 "    space: drop"
+"      q: quit"
 "n: toggle show next"
 "h: toggle this help"
 )
 
-help_on=1 # if this flag is 1 help is visible
+help_on=1 # if this flag is 1 help is shown
 
 toggle_help() {
     local i s
@@ -157,14 +174,18 @@ toggle_help() {
     ((help_on = -help_on))
 }
 
+# this array holds all possible pieces that can be used in the game
+# each piece consists of 4 cells
+# each string is sequence of relative xy coordinates for different orientations
+# depending on piece symmetry there can be 1, 2 or 4 orientations
 piece=(
-"00011011"
-"0212223210111213"
-"0001111201101120"
-"0102101100101121"
-"01021121101112220111202100101112"
-"01112122101112200001112102101112"
-"01111221101112210110112101101112"
+"00011011"                         # square piece
+"0212223210111213"                 # line piece
+"0001111201101120"                 # S piece
+"0102101100101121"                 # Z piece
+"01021121101112220111202100101112" # L piece
+"01112122101112200001112102101112" # inverted L piece
+"01111221101112210110112101101112" # T piece
 )
 
 draw_piece() {
@@ -172,7 +193,9 @@ draw_piece() {
     # 1 - x, 2 - y, 3 - type, 4 - rotation, 5 - cell content
     local i x y
 
+    # loop through piece cells: 4 cells, each has 2 coordinates
     for ((i = 0; i < 8; i += 2)) {
+        # relative coordinates are retrieved based on orientation and added to absolute coordinates
         ((x = $1 + ${piece[$3]:$((i + $4 * 8 + 1)):1} * 2))
         ((y = $2 + ${piece[$3]:$((i + $4 * 8)):1}))
         xyprint $x $y "$5"
@@ -183,11 +206,11 @@ draw_piece() {
 next_piece=0
 next_piece_rotation=0
 
-next_on=-1
+next_on=-1 # if this flag is 1 next piece is shown
 
 draw_next() {
     # Arguments: 1 - string to draw single cell 
-    draw_piece $NEXT_X $NEXT_Y $next_piece $next_piece_rotation "$1"
+    ((next_on == 1)) && draw_piece $NEXT_X $NEXT_Y $next_piece $next_piece_rotation "$1"
 }
 
 clear_next() {
@@ -199,11 +222,15 @@ show_next() {
 }
 
 toggle_next() {
-    ((next_on = -next_on))
-    ((next_on == 1)) && show_next || clear_next
+    case $next_on in
+        1) clear_next; next_on=-1 ;;
+        -1) next_on=1; show_next ;;
+    esac
 }
 
 draw_current() {
+    # Arguments: 1 - string to draw single cell
+    # factor 2 for x because each cell is 2 characters wide
     draw_piece $((current_piece_x * 2 + PLAYFIELD_X)) $((current_piece_y + PLAYFIELD_Y)) $current_piece $current_piece_rotation "$1"
 }
 
@@ -216,13 +243,13 @@ clear_current() {
 }
 
 new_piece_location_ok() {
-# arguments: 1 - new x coordinate of the piece, 2 - new y coordinate of the piece
-# test if piece can be moved to new location
+    # Arguments: 1 - new x coordinate of the piece, 2 - new y coordinate of the piece
+    # test if piece can be moved to new location
     local j i x y x_test=$1 y_test=$2
 
     for ((j = 0, i = 1; j < 8; j += 2, i = j + 1)) {
-        ((y = ${piece[$current_piece]:$((j + current_piece_rotation * 8)):1} + y_test)) # new y coordinate of piece part
-        ((x = ${piece[$current_piece]:$((i + current_piece_rotation * 8)):1} + x_test)) # new x coordinate of piece part
+        ((y = ${piece[$current_piece]:$((j + current_piece_rotation * 8)):1} + y_test)) # new y coordinate of piece cell
+        ((x = ${piece[$current_piece]:$((i + current_piece_rotation * 8)):1} + x_test)) # new x coordinate of piece cell
         ((y < 0 || y >= PLAYFIELD_H || x < 0 || x >= PLAYFIELD_W )) && return 1         # check if we are out of the play field
         ((${play_field[y * PLAYFIELD_W + x]} != -1 )) && return 1                       # check if location is already ocupied
     }
@@ -230,24 +257,28 @@ new_piece_location_ok() {
 }
 
 get_random_next() {
+    # next piece becomes current
     current_piece=$next_piece
     current_piece_rotation=$next_piece_rotation
+    # place current at the top of play field, approximately at the center
     ((current_piece_x = (PLAYFIELD_W - 4) / 2))
     ((current_piece_y = 0))
-    show_current
+    # check if piece can be placed at this location, if not - game over
     new_piece_location_ok $current_piece_x $current_piece_y || cmd_quit
+    show_current
 
-    ((next_on == 1)) && clear_next
+    clear_next
+    # now let's get next piece
     ((next_piece = RANDOM % ${#piece[@]}))
     ((next_piece_rotation = RANDOM % (${#piece[$next_piece]} / 8)))
-    ((next_on == 1)) && show_next
+    show_next
 }
 
 draw_border() {
     local i x1 x2 y
 
-    ((x1 = PLAYFIELD_X - 2))
-    ((x2 = PLAYFIELD_X + PLAYFIELD_W * 2))
+    ((x1 = PLAYFIELD_X - 2))               # 2 here is because border is 2 characters thick
+    ((x2 = PLAYFIELD_X + PLAYFIELD_W * 2)) # 2 here is because each cell on play field is 2 characters wide
     for ((i = 0; i < PLAYFIELD_H + 1; i++)) {
         ((y = i + PLAYFIELD_Y))
         xyprint $x1 $y "<|"
@@ -256,7 +287,7 @@ draw_border() {
 
     ((y = PLAYFIELD_Y + PLAYFIELD_H))
     for ((i = 0; i < PLAYFIELD_W; i++)) {
-        ((x1 = i * 2 + PLAYFIELD_X))
+        ((x1 = i * 2 + PLAYFIELD_X)) # 2 here is because each cell on play field is 2 characters wide
         xyprint $x1 $y '=='
         xyprint $x1 $((y + 1)) "\/"
     }
@@ -293,7 +324,7 @@ ticker() {
     # on SIGUSR2 this process should exit
     trap exit SIGUSR2
     # on SIGUSR1 delay should be decreased, this happens during level ups
-    trap 'DELAY=$(awk "BEGIN {print $DELAY * 0.8}")' SIGUSR1
+    trap 'DELAY=$(awk "BEGIN {print $DELAY * $DELAY_FACTOR}")' SIGUSR1
 
     while true ; do echo -n $DOWN; sleep $DELAY; done
 }
@@ -320,7 +351,8 @@ reader() {
     done
 }
 
-flatten_map() {
+# this function updates occupied cells in play_field array after piece is dropped
+flatten_playfield() {
     local i j k x y
     for ((i = 0, j = 1; i < 8; i += 2, j += 2)) {
         ((y = ${piece[$current_piece]:$((i + current_piece_rotation * 8)):1} + current_piece_y))
@@ -330,27 +362,30 @@ flatten_map() {
     }
 }
 
+# this function goes through play_field array and eliminates lines without empty sells
 process_complete_lines() {
     local j i complete_lines
     ((complete_lines = 0))
-    for ((j = 0; j < PLAYFIELD_W * PLAYFIELD_H; j += PLAYFIELD_W)) ; do
-        for ((i = j + PLAYFIELD_W - 1; i >= j; i--)) ; do
-            ((${play_field[$i]} == -1)) && break
-        done
-        ((i >= j)) && continue
+    for ((j = 0; j < PLAYFIELD_W * PLAYFIELD_H; j += PLAYFIELD_W)) {
+        for ((i = j + PLAYFIELD_W - 1; i >= j; i--)) {
+            ((${play_field[$i]} == -1)) && break # empty cell found
+        }
+        ((i >= j)) && continue # previous loop was interrupted because empty cell was found
         ((complete_lines++))
-        for ((i = j - 1; i >= 0; i--)) ; do
+        # move lines down
+        for ((i = j - 1; i >= 0; i--)) {
             play_field[$((i + PLAYFIELD_W))]=${play_field[$i]}
-        done
-        for ((i = 0; i < PLAYFIELD_W; i++)) ; do
+        }
+        # mark cells as free
+        for ((i = 0; i < PLAYFIELD_W; i++)) {
             play_field[$i]=-1
-        done
-    done
+        }
+    }
     return $complete_lines
 }
 
 process_fallen_piece() {
-    flatten_map
+    flatten_playfield
     process_complete_lines && return
     update_score $?
     redraw_playfield
@@ -383,17 +418,17 @@ cmd_left() {
 cmd_rotate() {
     local available_rotations old_rotation new_rotation
 
-    available_rotations=$((${#piece[$current_piece]} / 8))
-    old_rotation=$current_piece_rotation
-    new_rotation=$(((old_rotation + 1) % available_rotations))
-    current_piece_rotation=$new_rotation
-    if new_piece_location_ok $current_piece_x $current_piece_y ; then
-        current_piece_rotation=$old_rotation
-        clear_current
-        current_piece_rotation=$new_rotation
-        show_current
-    else
-        current_piece_rotation=$old_rotation
+    available_rotations=$((${#piece[$current_piece]} / 8))            # number of orientations for this piece
+    old_rotation=$current_piece_rotation                              # preserve current orientation
+    new_rotation=$(((old_rotation + 1) % available_rotations))        # calculate new orientation
+    current_piece_rotation=$new_rotation                              # set orientation to new
+    if new_piece_location_ok $current_piece_x $current_piece_y ; then # check if new orientation is ok
+        current_piece_rotation=$old_rotation                          # if yes - restore old orientation
+        clear_current                                                 # clear piece image
+        current_piece_rotation=$new_rotation                          # set new orientation
+        show_current                                                  # draw piece with new orientation
+    else                                                              # if new orientation is not ok
+        current_piece_rotation=$old_rotation                          # restore old orientation
     fi
 }
 
@@ -402,6 +437,11 @@ cmd_down() {
 }
 
 cmd_drop() {
+    # move piece all way down
+    # this is example of do..while loop in bash
+    # loop body is empty
+    # loop condition is done at least once
+    # loop runs until loop condition would return non zero exit code
     while move_piece $current_piece_x $((current_piece_y + 1)) ; do : ; done
 }
 
