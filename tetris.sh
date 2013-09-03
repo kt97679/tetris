@@ -164,7 +164,7 @@ update_score() {
     ((score += ($1 * $1)))
     if (( score > LEVEL_UP * level)) ; then          # if level should be increased
         ((level++))                                  # increment level
-        pkill --full --signal SIGUSR1 "/bin/bash $0" # and send SIGUSR1 signal to all instances of this script (please see ticker for more details)
+        pkill -SIGUSR1 -f "/bin/bash $0" # and send SIGUSR1 signal to all instances of this script (please see ticker for more details)
     fi
     set_bold
     set_fg $SCORE_COLOR
@@ -488,7 +488,7 @@ cmd_drop() {
 
 cmd_quit() {
     showtime=false                               # let's stop controller ...
-    pkill --full --signal SIGUSR2 "/bin/bash $0" # ... send SIGUSR2 to all script instances to stop forked processes ...
+    pkill -SIGUSR2 -f "/bin/bash $0" # ... send SIGUSR2 to all script instances to stop forked processes ...
     xyprint $GAMEOVER_X $GAMEOVER_Y "Game over!"
     echo -e "$screen_buffer"                     # ... and print final message
 }
