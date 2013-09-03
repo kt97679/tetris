@@ -3,12 +3,19 @@
 # Tetris game written in pure bash
 #
 # I tried to mimic as close as possible original tetris game
-# which was implemented on old soviet DVK computers
+# which was implemented on old soviet DVK computers (PDP-11 clones)
 #
 # Videos of this tetris can be found here:
 #
 # http://www.youtube.com/watch?v=O0gAgQQHFcQ
 # http://www.youtube.com/watch?v=iIQc1F3UuV4
+#
+# This script was created on ubuntu 13.04 x64 and bash 4.2.45(1)-release.
+# It was not tested on other unix like operating systems.
+#
+# Enjoy :-)!
+#
+# Author: Kirill Timofeev <kt97679@gmail.com>
 
 set -u # non initialized variable is an error
 
@@ -28,23 +35,36 @@ DOWN=4
 DROP=5
 TOGGLE_HELP=6
 TOGGLE_NEXT=7
+TOGGLE_COLOR=8
 
 DELAY=1          # initial delay between piece movements
 DELAY_FACTOR=0.8 # this value controld delay decrease for each level up
 
-# Location and size of playfield
+# color codes
+RED=1
+GREEN=2
+YELLOW=3
+BLUE=4
+FUCHSIA=5
+CYAN=6
+WHITE=7
+
+# Location and size of playfield, color of border
 PLAYFIELD_W=10
 PLAYFIELD_H=20
 PLAYFIELD_X=30
 PLAYFIELD_Y=1
+BORDER_COLOR=$YELLOW
 
-# Location of score information
+# Location and color of score information
 SCORE_X=1
 SCORE_Y=2
+SCORE_COLOR=$GREEN
 
-# Location of help information
+# Location and color of help information
 HELP_X=58
 HELP_Y=1
+HELP_COLOR=$CYAN
 
 # Next piece location
 NEXT_X=14
@@ -56,6 +76,8 @@ GAMEOVER_Y=$((PLAYFIELD_H + 3))
 
 # Intervals after which game level (and game speed) is increased 
 LEVEL_UP=20
+
+colors=($RED $GREEN $YELLOW $BLUE $FUCHSIA $CYAN $WHITE)
 
 no_color=true    # do we use color or not
 showtime=true    # controller runs while this flag is true
@@ -124,9 +146,8 @@ redraw_playfield() {
             if ((${play_field[$j]} == -1)) ; then
                 puts "$empty_cell"
             else
-                set_bold
-#                set_fg ${iMap[$j]}
-#                set_bg ${iMap[$j]}
+                set_fg ${play_field[$j]}
+                set_bg ${play_field[$j]}
                 puts "$filled_cell"
                 reset_colors
             fi
@@ -145,9 +166,12 @@ update_score() {
         ((level++))                                  # increment level
         pkill --full --signal SIGUSR1 "/bin/bash $0" # and send SIGUSR1 signal to all instances of this script (please see ticker for more details)
     fi
+    set_bold
+    set_fg $SCORE_COLOR
     xyprint $SCORE_X $SCORE_Y         "Lines completed: $lines_completed"
     xyprint $SCORE_X $((SCORE_Y + 1)) "Level:           $level"
     xyprint $SCORE_X $((SCORE_Y + 2)) "Score:           $score"
+    reset_colors
 }
 
 help=(
@@ -157,21 +181,25 @@ help=(
 "a: left,  d: right"
 "    space: drop"
 "      q: quit"
+"  c: toggle color"
 "n: toggle show next"
 "h: toggle this help"
 )
 
-help_on=1 # if this flag is 1 help is shown
+help_on=-1 # if this flag is 1 help is shown
 
 toggle_help() {
     local i s
 
+    set_bold
+    set_fg $HELP_COLOR
     for ((i = 0; i < ${#help[@]}; i++ )) {
         # ternary assignment: if help_on is 1 use string as is, otherwise substitute all characters with spaces
         ((help_on == 1)) && s="${help[i]}" || s="${help[i]//?/ }"
         xyprint $HELP_X $((HELP_Y + i)) "$s"
     }
     ((help_on = -help_on))
+    reset_colors
 }
 
 # this array holds all possible pieces that can be used in the game
@@ -200,17 +228,18 @@ draw_piece() {
         ((y = $2 + ${piece[$3]:$((i + $4 * 8)):1}))
         xyprint $x $y "$5"
     }
-    reset_colors
 }
 
 next_piece=0
 next_piece_rotation=0
+next_piece_color=0
 
-next_on=-1 # if this flag is 1 next piece is shown
+next_on=1 # if this flag is 1 next piece is shown
 
 draw_next() {
-    # Arguments: 1 - string to draw single cell 
-    ((next_on == 1)) && draw_piece $NEXT_X $NEXT_Y $next_piece $next_piece_rotation "$1"
+    # Arguments: 1 - string to draw single cell
+    ((next_on == -1)) && return
+    draw_piece $NEXT_X $NEXT_Y $next_piece $next_piece_rotation "$1"
 }
 
 clear_next() {
@@ -218,7 +247,10 @@ clear_next() {
 }
 
 show_next() {
+    set_fg $next_piece_color
+    set_bg $next_piece_color
     draw_next "${filled_cell}"
+    reset_colors
 }
 
 toggle_next() {
@@ -235,7 +267,10 @@ draw_current() {
 }
 
 show_current() {
+    set_fg $current_piece_color
+    set_bg $current_piece_color
     draw_current "${filled_cell}"
+    reset_colors
 }
 
 clear_current() {
@@ -260,6 +295,7 @@ get_random_next() {
     # next piece becomes current
     current_piece=$next_piece
     current_piece_rotation=$next_piece_rotation
+    current_piece_color=$next_piece_color
     # place current at the top of play field, approximately at the center
     ((current_piece_x = (PLAYFIELD_W - 4) / 2))
     ((current_piece_y = 0))
@@ -271,12 +307,15 @@ get_random_next() {
     # now let's get next piece
     ((next_piece = RANDOM % ${#piece[@]}))
     ((next_piece_rotation = RANDOM % (${#piece[$next_piece]} / 8)))
+    ((next_piece_color = RANDOM % ${#colors[@]}))
     show_next
 }
 
 draw_border() {
     local i x1 x2 y
 
+    set_bold
+    set_fg $BORDER_COLOR
     ((x1 = PLAYFIELD_X - 2))               # 2 here is because border is 2 characters thick
     ((x2 = PLAYFIELD_X + PLAYFIELD_W * 2)) # 2 here is because each cell on play field is 2 characters wide
     for ((i = 0; i < PLAYFIELD_H + 1; i++)) {
@@ -294,6 +333,17 @@ draw_border() {
     reset_colors
 }
 
+toggle_color() {
+    $no_color && no_color=false || no_color=true
+    show_next
+    update_score 0
+    toggle_help
+    toggle_help
+    draw_border
+    redraw_playfield
+    show_current
+}
+
 init() {
     local i x1 x2 y
 
@@ -304,18 +354,9 @@ init() {
 
     clear
     hide_cursor
-    update_score 0
-    toggle_help
-
-    set_bold
-#    set_fg $cBorder
-#    set_bg $cBorder
-
-    draw_border
     get_random_next
-    redraw_playfield
     get_random_next
-    toggle_next
+    toggle_color
 }
 
 # this function runs in separate process
@@ -337,7 +378,7 @@ reader() {
     # commands is associative array, which maps pressed keys to commands, sent to controller
     declare -A commands=([A]=$ROTATE [C]=$RIGHT [D]=$LEFT
         [_S]=$ROTATE [_A]=$LEFT [_D]=$RIGHT
-        [_]=$DROP [_Q]=$QUIT [_H]=$TOGGLE_HELP [_N]=$TOGGLE_NEXT)
+        [_]=$DROP [_Q]=$QUIT [_H]=$TOGGLE_HELP [_N]=$TOGGLE_NEXT [_C]=$TOGGLE_COLOR)
 
     while read -s -n 1 key ; do
         case "$a$b$key" in
@@ -358,7 +399,7 @@ flatten_playfield() {
         ((y = ${piece[$current_piece]:$((i + current_piece_rotation * 8)):1} + current_piece_y))
         ((x = ${piece[$current_piece]:$((j + current_piece_rotation * 8)):1} + current_piece_x))
         ((k = y * PLAYFIELD_W + x))
-        play_field[$k]=1 # TODO this should be changed after implementing color support
+        play_field[$k]=$current_piece_color
     }
 }
 
@@ -466,6 +507,7 @@ controller() {
     commands[$DROP]=cmd_drop
     commands[$TOGGLE_HELP]=toggle_help
     commands[$TOGGLE_NEXT]=toggle_next
+    commands[$TOGGLE_COLOR]=toggle_color
 
     init
 
