@@ -79,7 +79,7 @@ LEVEL_UP=20
 
 colors=($RED $GREEN $YELLOW $BLUE $FUCHSIA $CYAN $WHITE)
 
-no_color=true    # do we use color or not
+no_color=false   # do we use color or not
 showtime=true    # controller runs while this flag is true
 empty_cell=" ."  # how we draw empty cell
 filled_cell="[]" # how we draw filled cell
@@ -186,9 +186,9 @@ help=(
 "h: toggle this help"
 )
 
-help_on=-1 # if this flag is 1 help is shown
+help_on=1 # if this flag is 1 help is shown
 
-toggle_help() {
+draw_help() {
     local i s
 
     set_bold
@@ -198,8 +198,12 @@ toggle_help() {
         ((help_on == 1)) && s="${help[i]}" || s="${help[i]//?/ }"
         xyprint $HELP_X $((HELP_Y + i)) "$s"
     }
-    ((help_on = -help_on))
     reset_colors
+}
+
+toggle_help() {
+    ((help_on = -help_on))
+    draw_help
 }
 
 # this array holds all possible pieces that can be used in the game
@@ -333,15 +337,18 @@ draw_border() {
     reset_colors
 }
 
-toggle_color() {
-    $no_color && no_color=false || no_color=true
+redraw_screen() {
     show_next
     update_score 0
-    toggle_help
-    toggle_help
+    draw_help
     draw_border
     redraw_playfield
     show_current
+}
+
+toggle_color() {
+    $no_color && no_color=false || no_color=true
+    redraw_screen
 }
 
 init() {
@@ -356,7 +363,7 @@ init() {
     hide_cursor
     get_random_next
     get_random_next
-    toggle_color
+    redraw_screen
 }
 
 # this function runs in separate process
