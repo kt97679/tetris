@@ -177,7 +177,7 @@ update_score() {
 help=(
 "  Use cursor keys"
 "       or"
-"      s: up"
+"    s: rotate"
 "a: left,  d: right"
 "    space: drop"
 "      q: quit"
