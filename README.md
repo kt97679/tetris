@@ -1,5 +1,5 @@
-bash-tetris
+tetris
 ===========
 
-Tetris game implemented in pure bash.
+Tetris game implemented in pure bash and ruby.
 
