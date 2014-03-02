@@ -420,13 +420,9 @@ process_complete_lines() {
         }
         ((i >= j)) && continue # previous loop was interrupted because empty cell was found
         ((complete_lines++))
-        # move lines down
         for ((i = j - 1; i >= 0; i--)) {
-            play_field[$((i + PLAYFIELD_W))]=${play_field[$i]}
-        }
-        # mark cells as free
-        for ((i = 0; i < PLAYFIELD_W; i++)) {
-            play_field[$i]=-1
+            play_field[$((i + PLAYFIELD_W))]=${play_field[$i]} # move line down
+            play_field[$i]=-1 # mark cells as free
         }
     }
     return $complete_lines
