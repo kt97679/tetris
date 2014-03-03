@@ -138,7 +138,6 @@ class TetrisPiece
     @@score = 0
     @@level = 1
     @@lines_completed = 0
-    @@move_down_delay = INITIAL_MOVE_DOWN_DELAY
 
     def initialize(color)
         # abcd
@@ -297,7 +296,7 @@ class TetrisPiece
         @@score += (complete_lines * complete_lines)
         if @@score > LEVEL_UP * @@level
             @@level += 1
-            @@move_down_delay *= DELAY_FACTOR
+            TetrisController.decrease_move_down_delay()
         end
         view.set_bold()
         view.set_fg(SCORE_COLOR)
@@ -305,10 +304,6 @@ class TetrisPiece
         view.xyprint(SCORE_X, SCORE_Y + 1, "Level:           #{@@level}")
         view.xyprint(SCORE_X, SCORE_Y + 2, "Score:           #{@@score}")
         view.reset_colors()
-    end
-
-    def get_move_down_delay()
-        @@move_down_delay
     end
 end
 
@@ -419,19 +414,19 @@ class TetrisModel
     end
 
     def process(cmd)
-        if cmd == nil
-            return
-        end
+        return if cmd == nil
         send(cmd)
         @view.flush()
-    end
-
-    def get_move_down_delay()
-        @current_piece.get_move_down_delay()
     end
 end
 
 class TetrisController
+    @@move_down_delay = INITIAL_MOVE_DOWN_DELAY
+
+    def self.decrease_move_down_delay()
+        @@move_down_delay *= DELAY_FACTOR
+    end
+
     def initialize(model)
         @commands = {
             "\u0003" => :cmd_quit,
@@ -456,11 +451,11 @@ class TetrisController
             key = []
             while @model.running
                 now = Time.now.to_f
-                select_timeout = @model.get_move_down_delay() - (now - last_move_down_time)
+                select_timeout = @@move_down_delay - (now - last_move_down_time)
                 if select_timeout < 0
                     @model.process(:cmd_down)
                     last_move_down_time = now
-                    select_timeout = @model.get_move_down_delay()
+                    select_timeout = @@move_down_delay
                 end
                 a = select([STDIN], [], [], select_timeout)
                 cmd = nil
