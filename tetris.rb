@@ -31,8 +31,6 @@ PLAYFIELD_EMPTY_CELL = " ."
 FILLED_CELL = "[]"
 
 class TetrisView
-    attr_reader :color
-
     def initialize
         @s = ""
         @no_color = false
@@ -95,14 +93,38 @@ class TetrisView
     end
 
     def toggle_color()
-        @no_color = (! @no_color)
+        @no_color ^= true
     end
 end
 
-class TetrisHelp
-    def initialize()
-        @color = HELP_COLOR
+class TetrisViewItem
+    def initialize(view)
         @visible = true
+        @view = view
+    end
+
+    def show()
+        draw(true) if @visible
+    end
+
+    def hide()
+        draw(false) if @visible
+    end
+
+    def toggle()
+        @visible ^= true
+        draw(@visible)
+    end
+
+    def set_visible(value)
+        @visible = value
+    end
+end
+
+class TetrisHelp < TetrisViewItem
+    def initialize(view)
+        super(view)
+        @color = HELP_COLOR
         @text = [
             "  Use cursor keys",
             "       or",
@@ -116,81 +138,52 @@ class TetrisHelp
         ]
     end
 
-    def draw(view)
-        view.set_bold()
-        view.set_fg(@color)
+    def draw(visible)
+        @view.set_bold()
+        @view.set_fg(@color)
         @text.each_with_index do |s, i|
-            view.xyprint(HELP_X, HELP_Y + i, @visible ? s : ' ' * s.length)
+            @view.xyprint(HELP_X, HELP_Y + i, visible ? s : ' ' * s.length)
         end
-        view.reset_colors()
-    end
-
-    def toggle(view)
-        @visible = (! @visible)
-        draw(view)
+        @view.reset_colors()
     end
 end
 
-class TetrisPiece
-    attr_accessor :empty_cell, :x, :y, :orientation
+class TetrisPiece < TetrisViewItem
+    attr_accessor :empty_cell, :orientation
 
     @@play_field = []
     @@score = 0
     @@level = 1
     @@lines_completed = 0
+    @@piece_data = [
+        [[[0, 0], [0, 1], [1, 0], [1, 1]]], # square piece
+        [[[0, 2], [1, 2], [2, 2], [3, 2]], [[1, 0], [1, 1], [1, 2], [1, 3]]], # line piece
+        [[[0, 0], [0, 1], [1, 1], [1, 2]], [[0, 1], [1, 0], [1, 1], [2, 0]]], # S piece
+        [[[0, 1], [0, 2], [1, 0], [1, 1]], [[0, 0], [1, 0], [1, 1], [2, 1]]], # Z piece
+        [[[0, 1], [0, 2], [1, 1], [2, 1]], [[1, 0], [1, 1], [1, 2], [2, 2]], [[0, 1], [1, 1], [2, 0], [2, 1]], [[0, 0], [1, 0], [1, 1], [1, 2]]], # L piece
+        [[[0, 1], [1, 1], [2, 1], [2, 2]], [[1, 0], [1, 1], [1, 2], [2, 0]], [[0, 0], [0, 1], [1, 1], [2, 1]], [[0, 2], [1, 0], [1, 1], [1, 2]]], # inverted L piece
+        [[[0, 1], [1, 1], [1, 2], [2, 1]], [[1, 0], [1, 1], [1, 2], [2, 1]], [[0, 1], [1, 0], [1, 1], [2, 1]], [[0, 1], [1, 0], [1, 1], [1, 2]]]  # T piece
+    ]
 
-    def initialize(color)
-        # abcd
-        # efgh
-        # ijkl
-        # mnop
-        @piece_data = [
-            [[[0, 0], [0, 1], [1, 0], [1, 1]]], # square piece
-            [[[0, 2], [1, 2], [2, 2], [3, 2]], [[1, 0], [1, 1], [1, 2], [1, 3]]], # line piece
-            [[[0, 0], [0, 1], [1, 1], [1, 2]], [[0, 1], [1, 0], [1, 1], [2, 0]]], # S piece
-            [[[0, 1], [0, 2], [1, 0], [1, 1]], [[0, 0], [1, 0], [1, 1], [2, 1]]], # Z piece
-            [[[0, 1], [0, 2], [1, 1], [2, 1]], [[1, 0], [1, 1], [1, 2], [2, 2]], [[0, 1], [1, 1], [2, 0], [2, 1]], [[0, 0], [1, 0], [1, 1], [1, 2]]], # L piece
-            [[[0, 1], [1, 1], [2, 1], [2, 2]], [[1, 0], [1, 1], [1, 2], [2, 0]], [[0, 0], [0, 1], [1, 1], [2, 1]], [[0, 2], [1, 0], [1, 1], [1, 2]]], # inverted L piece
-            [[[0, 1], [1, 1], [1, 2], [2, 1]], [[1, 0], [1, 1], [1, 2], [2, 1]], [[0, 1], [1, 0], [1, 1], [2, 1]], [[0, 1], [1, 0], [1, 1], [1, 2]]]  # T piece
-        ]
+    def initialize(view)
+        super(view)
         @x = 0
         @y = 0
-        @visible = true
-        @color = color
-        @piece_index = rand(@piece_data.length)
-        @orientation = rand(@piece_data[@piece_index].size)
+        @color = @view.get_random_color()
+        @piece_index = rand(@@piece_data.size)
+        @orientation = rand(@@piece_data[@piece_index].size)
         @empty_cell = NEXT_EMPTY_CELL
     end
 
-    def draw(view, visible = nil)
-        if visible == nil
-            visible = @visible
-        end
+    def draw(visible)
         if visible
-            view.set_fg(@color)
-            view.set_bg(@color)
+            @view.set_fg(@color)
+            @view.set_bg(@color)
         end
-        @piece_data[@piece_index][@orientation].each do |cell|
-            view.xyprint(@origin_x + (@x + cell[0]) * 2, @origin_y + @y + cell[1], visible ? FILLED_CELL : @empty_cell)
+        @@piece_data[@piece_index][@orientation].each do |cell|
+            @view.xyprint(@origin_x + (@x + cell[0]) * 2, @origin_y + @y + cell[1], visible ? FILLED_CELL : @empty_cell)
         end
-        view.reset_colors()
-    end
-
-    def show(view)
-        if @visible
-            draw(view, true)
-        end
-    end
-
-    def hide(view)
-        if @visible
-            draw(view, false)
-        end
-    end
-
-    def toggle(view)
-        @visible = (! @visible)
-        draw(view, @visible)
+        @view.reset_colors()
     end
 
     def set_origin(x, y)
@@ -198,8 +191,13 @@ class TetrisPiece
         @origin_y = y
     end
 
+    def set_xy(x, y)
+        @x = x
+        @y = y
+    end
+
     def position_ok?(x, y, orientation)
-        @piece_data[@piece_index][orientation].each do |cell|
+        @@piece_data[@piece_index][orientation].each do |cell|
             cell_x = x + cell[0]
             cell_y = y + cell[1]
             if cell_x < 0 || cell_x >= PLAYFIELD_W || cell_y < 0 || cell_y >= PLAYFIELD_H
@@ -212,56 +210,56 @@ class TetrisPiece
         return true
     end
 
-    def redraw_playfield(view) 
+    def redraw_playfield() 
         xp = PLAYFIELD_X
         (0...PLAYFIELD_H).each do |y|
             yp = y + PLAYFIELD_Y
             i = y * PLAYFIELD_W
-            view.xyprint(xp, yp, "")
+            @view.xyprint(xp, yp, "")
             (0...PLAYFIELD_W).each do |x|
                 j = i + x
                 if @@play_field[j] == nil
-                    view.print(PLAYFIELD_EMPTY_CELL)
+                    @view.print(PLAYFIELD_EMPTY_CELL)
                 else
-                    view.set_fg(@@play_field[j])
-                    view.set_bg(@@play_field[j])
-                    view.print(FILLED_CELL)
-                    view.reset_colors()
+                    @view.set_fg(@@play_field[j])
+                    @view.set_bg(@@play_field[j])
+                    @view.print(FILLED_CELL)
+                    @view.reset_colors()
                 end
             end
         end
     end
 
-    def move(view, dx, dy, dr)
-        new_orientation = (@orientation + dr) % @piece_data[@piece_index].size
+    def move(dx, dy, dr)
+        new_orientation = (@orientation + dr) % @@piece_data[@piece_index].size
         new_x = @x + dx
         new_y = @y + dy
         if position_ok?(new_x, new_y, new_orientation)
-            hide(view)
+            hide()
             @x = new_x
             @y = new_y
             @orientation = new_orientation
-            show(view)
+            show()
             return true
         end
         if dy == 0
             return true
         end
-        process_fallen_piece(view)
+        process_fallen_piece()
         return false
     end
 
-    def process_fallen_piece(view)
+    def process_fallen_piece()
         flatten_playfield()
         complete_lines = process_complete_lines()
         if complete_lines > 0
-            update_score(view, complete_lines)
-            redraw_playfield(view)
+            update_score(complete_lines)
+            redraw_playfield()
         end
     end
 
     def flatten_playfield()
-        @piece_data[@piece_index][@orientation].each do |cell|
+        @@piece_data[@piece_index][@orientation].each do |cell|
             cell_x = @x + cell[0]
             cell_y = @y + cell[1]
             @@play_field[cell_x + cell_y * PLAYFIELD_W] = @color
@@ -291,19 +289,19 @@ class TetrisPiece
         return complete_lines
     end
 
-    def update_score(view, complete_lines)
+    def update_score(complete_lines)
         @@lines_completed += complete_lines
         @@score += (complete_lines * complete_lines)
         if @@score > LEVEL_UP * @@level
             @@level += 1
             TetrisController.decrease_move_down_delay()
         end
-        view.set_bold()
-        view.set_fg(SCORE_COLOR)
-        view.xyprint(SCORE_X, SCORE_Y,     "Lines completed: #{@@lines_completed}")
-        view.xyprint(SCORE_X, SCORE_Y + 1, "Level:           #{@@level}")
-        view.xyprint(SCORE_X, SCORE_Y + 2, "Score:           #{@@score}")
-        view.reset_colors()
+        @view.set_bold()
+        @view.set_fg(SCORE_COLOR)
+        @view.xyprint(SCORE_X, SCORE_Y,     "Lines completed: #{@@lines_completed}")
+        @view.xyprint(SCORE_X, SCORE_Y + 1, "Level:           #{@@level}")
+        @view.xyprint(SCORE_X, SCORE_Y + 2, "Score:           #{@@score}")
+        @view.reset_colors()
     end
 end
 
@@ -312,42 +310,46 @@ class TetrisModel
 
     def initialize(view)
         @view = view
+        @next_piece_visible = true
         @running = true
-        @help = TetrisHelp.new()
+        @help = TetrisHelp.new(@view)
         get_next_piece()
-        get_next_piece()
+        get_current_piece()
         redraw_screen()
         @view.flush()
     end
 
-    def get_next_piece()
-        if @next_piece
-            @next_piece.hide(@view)
-            @current_piece = @next_piece
-            if ! @current_piece.position_ok?((PLAYFIELD_W - 4) / 2, 0, @current_piece.orientation)
-                process(:cmd_quit)
-                return
-            end
-            @current_piece.empty_cell = PLAYFIELD_EMPTY_CELL
-            @current_piece.x = (PLAYFIELD_W - 4) / 2
-            @current_piece.y = 0
-            @current_piece.set_origin(PLAYFIELD_X, PLAYFIELD_Y)
-            @current_piece.show(@view)
+    def get_current_piece()
+        @next_piece.hide()
+        @current_piece = @next_piece
+        if ! @current_piece.position_ok?((PLAYFIELD_W - 4) / 2, 0, @current_piece.orientation)
+            process(:cmd_quit)
+            return
         end
-        @next_piece = TetrisPiece.new(@view.get_random_color())
+        @current_piece.set_visible(true)
+        @current_piece.empty_cell = PLAYFIELD_EMPTY_CELL
+        @current_piece.set_xy((PLAYFIELD_W - 4) / 2, 0)
+        @current_piece.set_origin(PLAYFIELD_X, PLAYFIELD_Y)
+        @current_piece.show()
+        get_next_piece()
+    end
+
+    def get_next_piece()
+        @next_piece = TetrisPiece.new(@view)
         @next_piece.set_origin(NEXT_X, NEXT_Y)
-        @next_piece.show(@view)
+        @next_piece.set_visible(@next_piece_visible)
+        @next_piece.show()
     end
 
     def redraw_screen()
         @view.clear_screen()
         @view.hide_cursor()
         draw_border()
-        @help.draw(@view)
-        @current_piece.redraw_playfield(@view)
-        @current_piece.update_score(@view, 0)
-        @next_piece.draw(@view)
-        @current_piece.draw(@view)
+        @help.show()
+        @current_piece.redraw_playfield()
+        @current_piece.update_score(0)
+        @next_piece.show()
+        @current_piece.show()
     end
 
     def draw_border()
@@ -378,34 +380,35 @@ class TetrisModel
     end
 
     def cmd_right
-        @current_piece.move(@view, 1, 0, 0)
+        @current_piece.move(1, 0, 0)
     end
 
     def cmd_left
-        @current_piece.move(@view, -1, 0, 0)
+        @current_piece.move(-1, 0, 0)
     end
 
     def cmd_rotate
-        @current_piece.move(@view, 0, 0, -1)
+        @current_piece.move(0, 0, -1)
     end
 
     def cmd_down
-        return if @current_piece.move(@view, 0, 1, 0)
-        get_next_piece()
+        return true if @current_piece.move(0, 1, 0)
+        get_current_piece()
+        return false
     end
 
     def cmd_drop
-        while @current_piece.move(@view, 0, 1, 0)
+        while cmd_down()
         end
-        get_next_piece()
     end
 
     def toggle_help
-        @help.toggle(@view)
+        @help.toggle()
     end
 
     def toggle_next
-        @next_piece.toggle(@view)
+        @next_piece_visible ^= true
+        @next_piece.toggle()
     end
 
     def toggle_color
