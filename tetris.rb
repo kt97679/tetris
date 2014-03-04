@@ -31,18 +31,18 @@ PLAYFIELD_EMPTY_CELL = " ."
 FILLED_CELL = "[]"
 
 class TetrisView
+    @@color = {
+        :red => 1,
+        :green => 2,
+        :yellow => 3,
+        :blue => 4,
+        :fuchsia => 5,
+        :cyan => 6,
+        :white => 7
+    }
     def initialize
         @s = ""
         @no_color = false
-        @color = {
-            :red => 1,
-            :green => 2,
-            :yellow => 3,
-            :blue => 4,
-            :fuchsia => 5,
-            :cyan => 6,
-            :white => 7
-        }
     end
 
     def print(s)
@@ -63,12 +63,12 @@ class TetrisView
 
     def set_fg(c)
         return if @no_color
-        @s += "\e[3#{@color[c]}m"
+        @s += "\e[3#{@@color[c]}m"
     end
 
     def set_bg(c)
         return if @no_color
-        @s += "\e[4#{@color[c]}m"
+        @s += "\e[4#{@@color[c]}m"
     end
 
     def reset_colors()
@@ -89,7 +89,7 @@ class TetrisView
     end
 
     def get_random_color()
-        return @color.keys.shuffle.first
+        return @@color.keys.shuffle.first
     end
 
     def toggle_color()
@@ -355,19 +355,15 @@ class TetrisModel
     def draw_border()
         @view.set_bold()
         @view.set_fg(BORDER_COLOR)
-        x1 = PLAYFIELD_X - 2               # 2 here is because border is 2 characters thick
-        x2 = PLAYFIELD_X + PLAYFIELD_W * 2 # 2 here is because each cell on play field is 2 characters wide
-        (0..PLAYFIELD_H).each do |i|
-            y = i + PLAYFIELD_Y
-            @view.xyprint(x1, y, "<|")
-            @view.xyprint(x2, y, "|>")
+        (0..PLAYFIELD_H).map {|y| y + PLAYFIELD_Y}.each do |y|
+            # 2 because border is 2 characters thick
+            @view.xyprint(PLAYFIELD_X - 2, y, "<|")
+            # 2 because each cell on play field is 2 characters wide
+            @view.xyprint(PLAYFIELD_X + PLAYFIELD_W * 2, y, "|>")
         end
 
-        y = PLAYFIELD_Y + PLAYFIELD_H
-        (0...PLAYFIELD_W).each do |i|
-            x1 = i * 2 + PLAYFIELD_X # 2 here is because each cell on play field is 2 characters wide
-            @view.xyprint(x1, y, '==')
-            @view.xyprint(x1, y + 1, '\/')
+        ['==', '\/'].each_with_index do |s, y|
+            @view.xyprint(PLAYFIELD_X, PLAYFIELD_Y + PLAYFIELD_H + y, s * PLAYFIELD_W)
         end
         @view.reset_colors()
     end
@@ -446,12 +442,11 @@ class TetrisController
     end
 
     def run()
-        last_move_down_time = Time.now.to_f
-
         begin
             STDIN.echo = false
             STDIN.raw!
             key = []
+            last_move_down_time = Time.now.to_f
             while @model.running
                 now = Time.now.to_f
                 select_timeout = @@move_down_delay - (now - last_move_down_time)
