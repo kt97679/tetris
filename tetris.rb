@@ -30,7 +30,7 @@ NEXT_EMPTY_CELL = "  "
 PLAYFIELD_EMPTY_CELL = " ."
 FILLED_CELL = "[]"
 
-class TetrisView
+class TetrisScreen
     @@color = {
         :red => 1,
         :green => 2,
@@ -97,10 +97,10 @@ class TetrisView
     end
 end
 
-class TetrisViewItem
-    def initialize(view)
+class TetrisScreenItem
+    def initialize(screen)
         @visible = true
-        @view = view
+        @screen = screen
     end
 
     def show()
@@ -121,9 +121,9 @@ class TetrisViewItem
     end
 end
 
-class TetrisHelp < TetrisViewItem
-    def initialize(view)
-        super(view)
+class TetrisHelp < TetrisScreenItem
+    def initialize(screen)
+        super(screen)
         @color = HELP_COLOR
         @text = [
             "  Use cursor keys",
@@ -139,16 +139,16 @@ class TetrisHelp < TetrisViewItem
     end
 
     def draw(visible)
-        @view.set_bold()
-        @view.set_fg(@color)
+        @screen.set_bold()
+        @screen.set_fg(@color)
         @text.each_with_index do |s, i|
-            @view.xyprint(HELP_X, HELP_Y + i, visible ? s : ' ' * s.length)
+            @screen.xyprint(HELP_X, HELP_Y + i, visible ? s : ' ' * s.length)
         end
-        @view.reset_colors()
+        @screen.reset_colors()
     end
 end
 
-class TetrisPiece < TetrisViewItem
+class TetrisPiece < TetrisScreenItem
     attr_accessor :empty_cell, :orientation
 
     @@play_field = []
@@ -165,11 +165,11 @@ class TetrisPiece < TetrisViewItem
         [[[0, 1], [1, 1], [1, 2], [2, 1]], [[1, 0], [1, 1], [1, 2], [2, 1]], [[0, 1], [1, 0], [1, 1], [2, 1]], [[0, 1], [1, 0], [1, 1], [1, 2]]]  # T piece
     ]
 
-    def initialize(view)
-        super(view)
+    def initialize(screen)
+        super(screen)
         @x = 0
         @y = 0
-        @color = @view.get_random_color()
+        @color = @screen.get_random_color()
         @piece_index = rand(@@piece_data.size)
         @orientation = rand(@@piece_data[@piece_index].size)
         @empty_cell = NEXT_EMPTY_CELL
@@ -177,13 +177,13 @@ class TetrisPiece < TetrisViewItem
 
     def draw(visible)
         if visible
-            @view.set_fg(@color)
-            @view.set_bg(@color)
+            @screen.set_fg(@color)
+            @screen.set_bg(@color)
         end
         @@piece_data[@piece_index][@orientation].each do |cell|
-            @view.xyprint(@origin_x + (@x + cell[0]) * 2, @origin_y + @y + cell[1], visible ? FILLED_CELL : @empty_cell)
+            @screen.xyprint(@origin_x + (@x + cell[0]) * 2, @origin_y + @y + cell[1], visible ? FILLED_CELL : @empty_cell)
         end
-        @view.reset_colors()
+        @screen.reset_colors()
     end
 
     def set_origin(x, y)
@@ -215,16 +215,16 @@ class TetrisPiece < TetrisViewItem
         (0...PLAYFIELD_H).each do |y|
             yp = y + PLAYFIELD_Y
             i = y * PLAYFIELD_W
-            @view.xyprint(xp, yp, "")
+            @screen.xyprint(xp, yp, "")
             (0...PLAYFIELD_W).each do |x|
                 j = i + x
                 if @@play_field[j] == nil
-                    @view.print(PLAYFIELD_EMPTY_CELL)
+                    @screen.print(PLAYFIELD_EMPTY_CELL)
                 else
-                    @view.set_fg(@@play_field[j])
-                    @view.set_bg(@@play_field[j])
-                    @view.print(FILLED_CELL)
-                    @view.reset_colors()
+                    @screen.set_fg(@@play_field[j])
+                    @screen.set_bg(@@play_field[j])
+                    @screen.print(FILLED_CELL)
+                    @screen.reset_colors()
                 end
             end
         end
@@ -294,29 +294,29 @@ class TetrisPiece < TetrisViewItem
         @@score += (complete_lines * complete_lines)
         if @@score > LEVEL_UP * @@level
             @@level += 1
-            TetrisController.decrease_move_down_delay()
+            TetrisInputProcessor.decrease_move_down_delay()
         end
-        @view.set_bold()
-        @view.set_fg(SCORE_COLOR)
-        @view.xyprint(SCORE_X, SCORE_Y,     "Lines completed: #{@@lines_completed}")
-        @view.xyprint(SCORE_X, SCORE_Y + 1, "Level:           #{@@level}")
-        @view.xyprint(SCORE_X, SCORE_Y + 2, "Score:           #{@@score}")
-        @view.reset_colors()
+        @screen.set_bold()
+        @screen.set_fg(SCORE_COLOR)
+        @screen.xyprint(SCORE_X, SCORE_Y,     "Lines completed: #{@@lines_completed}")
+        @screen.xyprint(SCORE_X, SCORE_Y + 1, "Level:           #{@@level}")
+        @screen.xyprint(SCORE_X, SCORE_Y + 2, "Score:           #{@@score}")
+        @screen.reset_colors()
     end
 end
 
 class TetrisModel
     attr_reader :running
 
-    def initialize(view)
-        @view = view
+    def initialize(screen)
+        @screen = screen
         @next_piece_visible = true
         @running = true
-        @help = TetrisHelp.new(@view)
+        @help = TetrisHelp.new(@screen)
         get_next_piece()
         get_current_piece()
         redraw_screen()
-        @view.flush()
+        @screen.flush()
     end
 
     def get_current_piece()
@@ -335,15 +335,15 @@ class TetrisModel
     end
 
     def get_next_piece()
-        @next_piece = TetrisPiece.new(@view)
+        @next_piece = TetrisPiece.new(@screen)
         @next_piece.set_origin(NEXT_X, NEXT_Y)
         @next_piece.set_visible(@next_piece_visible)
         @next_piece.show()
     end
 
     def redraw_screen()
-        @view.clear_screen()
-        @view.hide_cursor()
+        @screen.clear_screen()
+        @screen.hide_cursor()
         draw_border()
         @help.show()
         @current_piece.redraw_playfield()
@@ -353,26 +353,26 @@ class TetrisModel
     end
 
     def draw_border()
-        @view.set_bold()
-        @view.set_fg(BORDER_COLOR)
+        @screen.set_bold()
+        @screen.set_fg(BORDER_COLOR)
         (0..PLAYFIELD_H).map {|y| y + PLAYFIELD_Y}.each do |y|
             # 2 because border is 2 characters thick
-            @view.xyprint(PLAYFIELD_X - 2, y, "<|")
+            @screen.xyprint(PLAYFIELD_X - 2, y, "<|")
             # 2 because each cell on play field is 2 characters wide
-            @view.xyprint(PLAYFIELD_X + PLAYFIELD_W * 2, y, "|>")
+            @screen.xyprint(PLAYFIELD_X + PLAYFIELD_W * 2, y, "|>")
         end
 
         ['==', '\/'].each_with_index do |s, y|
-            @view.xyprint(PLAYFIELD_X, PLAYFIELD_Y + PLAYFIELD_H + y, s * PLAYFIELD_W)
+            @screen.xyprint(PLAYFIELD_X, PLAYFIELD_Y + PLAYFIELD_H + y, s * PLAYFIELD_W)
         end
-        @view.reset_colors()
+        @screen.reset_colors()
     end
 
     def cmd_quit
         @running = false
-        @view.xyprint(GAMEOVER_X, GAMEOVER_Y, "Game over!")
-        @view.xyprint(GAMEOVER_X, GAMEOVER_Y + 1, "")
-        @view.show_cursor()
+        @screen.xyprint(GAMEOVER_X, GAMEOVER_Y, "Game over!")
+        @screen.xyprint(GAMEOVER_X, GAMEOVER_Y + 1, "")
+        @screen.show_cursor()
     end
 
     def cmd_right
@@ -408,18 +408,18 @@ class TetrisModel
     end
 
     def toggle_color
-        @view.toggle_color()
+        @screen.toggle_color()
         redraw_screen()
     end
 
     def process(cmd)
         return if cmd == nil
         send(cmd)
-        @view.flush()
+        @screen.flush()
     end
 end
 
-class TetrisController
+class TetrisInputProcessor
     @@move_down_delay = INITIAL_MOVE_DOWN_DELAY
 
     def self.decrease_move_down_delay()
@@ -476,7 +476,7 @@ class TetrisController
     end
 end
 
-tv = TetrisView.new
-tm = TetrisModel.new(tv)
-tc = TetrisController.new(tm)
-tc.run()
+ts = TetrisScreen.new
+tm = TetrisModel.new(ts)
+tip = TetrisInputProcessor.new(tm)
+tip.run()
