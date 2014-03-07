@@ -151,7 +151,7 @@ end
 class TetrisPiece < TetrisScreenItem
     attr_accessor :empty_cell, :orientation
 
-    @@play_field = []
+    @@play_field = Array.new(PLAYFIELD_H) { Array.new(PLAYFIELD_W) }
     @@score = 0
     @@level = 1
     @@lines_completed = 0
@@ -203,26 +203,22 @@ class TetrisPiece < TetrisScreenItem
             if cell_x < 0 || cell_x >= PLAYFIELD_W || cell_y < 0 || cell_y >= PLAYFIELD_H
                 return false
             end
-            if @@play_field[cell_x + cell_y * PLAYFIELD_W] != nil
+            if @@play_field[cell_y][cell_x] != nil
                 return false
             end
         end
         return true
     end
 
-    def redraw_playfield() 
-        xp = PLAYFIELD_X
-        (0...PLAYFIELD_H).each do |y|
-            yp = y + PLAYFIELD_Y
-            i = y * PLAYFIELD_W
-            @screen.xyprint(xp, yp, "")
-            (0...PLAYFIELD_W).each do |x|
-                j = i + x
-                if @@play_field[j] == nil
+    def redraw_playfield()
+        @@play_field.each_with_index do |row, y|
+            @screen.xyprint(PLAYFIELD_X, PLAYFIELD_Y + y, "")
+            row.each do |cell|
+                if cell == nil
                     @screen.print(PLAYFIELD_EMPTY_CELL)
                 else
-                    @screen.set_fg(@@play_field[j])
-                    @screen.set_bg(@@play_field[j])
+                    @screen.set_fg(cell)
+                    @screen.set_bg(cell)
                     @screen.print(FILLED_CELL)
                     @screen.reset_colors()
                 end
@@ -262,30 +258,14 @@ class TetrisPiece < TetrisScreenItem
         @@piece_data[@piece_index][@orientation].each do |cell|
             cell_x = @x + cell[0]
             cell_y = @y + cell[1]
-            @@play_field[cell_x + cell_y * PLAYFIELD_W] = @color
+            @@play_field[cell_y][cell_x] = @color
         end
     end
 
     def process_complete_lines()
-        complete_lines = 0
-        j = -PLAYFIELD_W
-        while j < PLAYFIELD_W * PLAYFIELD_H
-            j += PLAYFIELD_W
-            i = j + PLAYFIELD_W - 1
-            while i >= j
-                break if @@play_field[i] == nil # empty cell found
-                i -= 1
-            end
-            next if i >= j  # previous loop was interrupted because empty cell was found
-            complete_lines += 1
-            # move lines down
-            i = j - 1
-            while i >= 0
-                @@play_field[i + PLAYFIELD_W] = @@play_field[i]
-                @@play_field[i] = nil
-                i -= 1
-            end
-        end
+        @@play_field = @@play_field.select {|row| row.include?(nil) }
+        complete_lines = PLAYFIELD_H - @@play_field.size
+        complete_lines.times { @@play_field.unshift(Array.new(PLAYFIELD_W)) }
         return complete_lines
     end
 
