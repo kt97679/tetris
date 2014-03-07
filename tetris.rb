@@ -263,7 +263,7 @@ class TetrisPiece < TetrisScreenItem
     end
 
     def process_complete_lines()
-        @@play_field = @@play_field.select {|row| row.include?(nil) }
+        @@play_field.select! {|row| row.include?(nil) }
         complete_lines = PLAYFIELD_H - @@play_field.size
         complete_lines.times { @@play_field.unshift(Array.new(PLAYFIELD_W)) }
         return complete_lines
