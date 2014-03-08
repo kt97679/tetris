@@ -155,14 +155,18 @@ class TetrisPiece < TetrisScreenItem
     @@score = 0
     @@level = 1
     @@lines_completed = 0
+    # 0123
+    # 4567
+    # 89ab
+    # cdef
     @@piece_data = [
-        [[[0, 0], [0, 1], [1, 0], [1, 1]]], # square piece
-        [[[0, 2], [1, 2], [2, 2], [3, 2]], [[1, 0], [1, 1], [1, 2], [1, 3]]], # line piece
-        [[[0, 0], [0, 1], [1, 1], [1, 2]], [[0, 1], [1, 0], [1, 1], [2, 0]]], # S piece
-        [[[0, 1], [0, 2], [1, 0], [1, 1]], [[0, 0], [1, 0], [1, 1], [2, 1]]], # Z piece
-        [[[0, 1], [0, 2], [1, 1], [2, 1]], [[1, 0], [1, 1], [1, 2], [2, 2]], [[0, 1], [1, 1], [2, 0], [2, 1]], [[0, 0], [1, 0], [1, 1], [1, 2]]], # L piece
-        [[[0, 1], [1, 1], [2, 1], [2, 2]], [[1, 0], [1, 1], [1, 2], [2, 0]], [[0, 0], [0, 1], [1, 1], [2, 1]], [[0, 2], [1, 0], [1, 1], [1, 2]]], # inverted L piece
-        [[[0, 1], [1, 1], [1, 2], [2, 1]], [[1, 0], [1, 1], [1, 2], [2, 1]], [[0, 1], [1, 0], [1, 1], [2, 1]], [[0, 1], [1, 0], [1, 1], [1, 2]]]  # T piece
+        [0x1256], # square
+        [0x159d, 0x4567], # line
+        [0x4512, 0x0459], # s
+        [0x0156, 0x1548], # z
+        [0x159a, 0x8456, 0x0159, 0x2654], # l
+        [0x1598, 0x0456, 0x2159, 0xa654], # inverted l
+        [0x1456, 0x1596, 0x4569, 0x4159]  # t
     ]
 
     def initialize(screen)
@@ -175,12 +179,17 @@ class TetrisPiece < TetrisScreenItem
         @empty_cell = NEXT_EMPTY_CELL
     end
 
+    def get_piece_cells(orientation = @orientation)
+        data = @@piece_data[@piece_index][orientation]
+        (0..3).map {|i| data >> (4 * i)}.inject([]) {|x, i| x << [i & 3, (i >> 2) & 3]}
+    end
+
     def draw(visible)
         if visible
             @screen.set_fg(@color)
             @screen.set_bg(@color)
         end
-        @@piece_data[@piece_index][@orientation].each do |cell|
+        get_piece_cells().each do |cell|
             @screen.xyprint(@origin_x + (@x + cell[0]) * 2, @origin_y + @y + cell[1], visible ? FILLED_CELL : @empty_cell)
         end
         @screen.reset_colors()
@@ -197,7 +206,7 @@ class TetrisPiece < TetrisScreenItem
     end
 
     def position_ok?(x, y, orientation)
-        @@piece_data[@piece_index][orientation].each do |cell|
+        get_piece_cells(orientation).each do |cell|
             cell_x = x + cell[0]
             cell_y = y + cell[1]
             if cell_x < 0 || cell_x >= PLAYFIELD_W || cell_y < 0 || cell_y >= PLAYFIELD_H
@@ -255,7 +264,7 @@ class TetrisPiece < TetrisScreenItem
     end
 
     def flatten_playfield()
-        @@piece_data[@piece_index][@orientation].each do |cell|
+        get_piece_cells().each do |cell|
             cell_x = @x + cell[0]
             cell_y = @y + cell[1]
             @@play_field[cell_y][cell_x] = @color
@@ -364,7 +373,7 @@ class TetrisModel
     end
 
     def cmd_rotate
-        @current_piece.move(0, 0, -1)
+        @current_piece.move(0, 0, 1)
     end
 
     def cmd_down
