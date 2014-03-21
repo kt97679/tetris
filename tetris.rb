@@ -440,7 +440,7 @@ class TetrisInputProcessor
         @@move_down_delay *= DELAY_FACTOR
     end
 
-    def initialize(model)
+    def initialize(controller)
         @commands = {
             "\u0003" => :cmd_quit,
             "q" => :cmd_quit,
@@ -452,7 +452,7 @@ class TetrisInputProcessor
             "n" => :toggle_next,
             "c" => :toggle_color
         }
-        @model = model
+        @controller = controller
     end
 
     def run()
@@ -461,11 +461,11 @@ class TetrisInputProcessor
             STDIN.raw!
             key = []
             last_move_down_time = Time.now.to_f
-            while @model.running
+            while @controller.running
                 now = Time.now.to_f
                 select_timeout = @@move_down_delay - (now - last_move_down_time)
                 if select_timeout < 0
-                    @model.process(:cmd_down)
+                    @controller.process(:cmd_down)
                     last_move_down_time = now
                     select_timeout = @@move_down_delay
                 end
@@ -481,7 +481,7 @@ class TetrisInputProcessor
                         cmd = @commands[key[0].downcase()]
                     end
                 end
-                @model.process(cmd)
+                @controller.process(cmd)
             end
         ensure
             STDIN.echo = true
