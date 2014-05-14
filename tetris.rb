@@ -444,9 +444,9 @@ class TetrisInputProcessor
         @commands = {
             "\u0003" => :cmd_quit,
             "q" => :cmd_quit,
-            "C" => :cmd_right,
-            "D" => :cmd_left,
-            "A" => :cmd_rotate,
+            "d" => :cmd_right,
+            "a" => :cmd_left,
+            "s" => :cmd_rotate,
             " " => :cmd_drop,
             "h" => :toggle_help,
             "n" => :toggle_next,
