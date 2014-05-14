@@ -1,5 +1,27 @@
 #!/usr/bin/env ruby
 
+# Tetris game written in pure ruby
+#
+# I tried to mimic as close as possible original tetris game
+# which was implemented on old soviet DVK computers (PDP-11 clones)
+#
+# Videos of this tetris can be found here:
+#
+# http://www.youtube.com/watch?v=O0gAgQQHFcQ
+# http://www.youtube.com/watch?v=iIQc1F3UuV4
+#
+# This script was created on ubuntu 13.10 x64 and ruby 1.9.3p194
+# It was not tested on other unix like operating systems.
+#
+# Enjoy :-)!
+#
+# Author: Kirill Timofeev <kt97679@gmail.com>
+#
+# This program is free software. It comes without any warranty, to the extent
+# permitted by applicable law. You can redistribute it and/or modify it under
+# the terms of the Do What The Fuck You Want To Public License, Version 2, as
+# published by Sam Hocevar. See http://www.wtfpl.net/ for more details.
+
 require 'io/console'
 
 PLAYFIELD_W = 10
