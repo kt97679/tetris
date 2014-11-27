@@ -1,5 +1,5 @@
 tetris
 ===========
 
-Tetris game implemented in pure bash and ruby.
+Tetris game implemented in pure bash, ruby and server side javascript.
 
