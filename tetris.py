@@ -447,5 +447,6 @@ class TetrisInputProcessor:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
             self.setBlocking(sys.stdin)
 
-TetrisInputProcessor().run()
+if __name__ == '__main__':
+    TetrisInputProcessor().run()
 
