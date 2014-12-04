@@ -272,7 +272,7 @@ class TetrisScore:
         self.score += (complete_lines * complete_lines)
         if self.score > LEVEL_UP * self.level:
             self.level += 1
-            self.tetris_input_processor.decrease_move_down_delay()
+            self.tetris_input_processor.decrease_delay()
         self.show()
 
     def show(self):
@@ -403,58 +403,61 @@ def tcattr():
 
 
 class TetrisInputProcessor:
-    def decrease_move_down_delay(self):
-        self.move_down_delay *= DELAY_FACTOR
+    delay = INITIAL_MOVE_DOWN_DELAY
 
-    def run(self):
-        self.move_down_delay = INITIAL_MOVE_DOWN_DELAY
-        with nonblocking_input(), tcattr():
-        #    tty.setcbreak(sys.stdin.fileno())
-            tty.setraw(sys.stdin.fileno())
+    def decrease_delay(self):
+        self.delay *= DELAY_FACTOR
 
-            key = [0, 0, 0]
-            ts = TetrisScreen()
-            ts.clear_screen()
-            tc = TetrisController(ts, self)
-            commands = {
-                "\x03": tc.cmd_quit,
-                "q": tc.cmd_quit,
-                "C": tc.cmd_right,
-                "d": tc.cmd_right,
-                "D": tc.cmd_left,
-                "a": tc.cmd_left,
-                "A": tc.cmd_rotate,
-                "s": tc.cmd_rotate,
-                " ": tc.cmd_drop,
-                "h": tc.toggle_help,
-                "n": tc.toggle_next,
-                "c": tc.toggle_color
-            }
-            last_move_down_time = time.time()
-            while tc.running:
-                cmd = None
-                now = time.time()
-                select_timeout = self.move_down_delay - (now - last_move_down_time)
-                if select_timeout < 0:
-                    tc.cmd_down()
-                    ts.flush()
-                    last_move_down_time = now
-                    select_timeout = self.move_down_delay
-                if select.select([sys.stdin], [], [], self.move_down_delay)[0]:
-                    s = sys.stdin.read(16)
-                    for c in s:
-                        key[2] = key[1]
-                        key[1] = key[0]
-                        key[0] = c
-                        if key[2] == '\x1b' and key[1] == '[':         # x1b is ESC
-                            cmd = commands.get(key[0], None)
-                        else:
-                            cmd = commands.get(key[0].lower(), None)
-                        if cmd:
-                            cmd()
-                            ts.flush()
+
+def run():
+    input_processor = TetrisInputProcessor()
+    with nonblocking_input(), tcattr():
+    #    tty.setcbreak(sys.stdin.fileno())
+        tty.setraw(sys.stdin.fileno())
+
+        key = [0, 0, 0]
+        ts = TetrisScreen()
+        ts.clear_screen()
+        tc = TetrisController(ts, input_processor)
+        commands = {
+            "\x03": tc.cmd_quit,
+            "q": tc.cmd_quit,
+            "C": tc.cmd_right,
+            "d": tc.cmd_right,
+            "D": tc.cmd_left,
+            "a": tc.cmd_left,
+            "A": tc.cmd_rotate,
+            "s": tc.cmd_rotate,
+            " ": tc.cmd_drop,
+            "h": tc.toggle_help,
+            "n": tc.toggle_next,
+            "c": tc.toggle_color
+        }
+        last_move_down_time = time.time()
+        while tc.running:
+            cmd = None
+            now = time.time()
+            select_timeout = input_processor.delay - (now - last_move_down_time)
+            if select_timeout < 0:
+                tc.cmd_down()
+                ts.flush()
+                last_move_down_time = now
+                select_timeout = input_processor.delay
+            if select.select([sys.stdin], [], [], input_processor.delay)[0]:
+                s = sys.stdin.read(16)
+                for c in s:
+                    key[2] = key[1]
+                    key[1] = key[0]
+                    key[0] = c
+                    if key[2] == '\x1b' and key[1] == '[':         # x1b is ESC
+                        cmd = commands.get(key[0], None)
+                    else:
+                        cmd = commands.get(key[0].lower(), None)
+                    if cmd:
+                        cmd()
+                        ts.flush()
 
 
 if __name__ == '__main__':
-    TetrisInputProcessor().run()
+    run()
 
