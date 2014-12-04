@@ -12,6 +12,7 @@ if (sys.hexversion >> 16) >= 0x202:
     FCNTL = fcntl
 else:
     import FCNTL
+import contextlib
 
 PLAYFIELD_W = 10
 PLAYFIELD_H = 20
@@ -379,27 +380,37 @@ class TetrisController:
         self.screen.toggle_color()
         self.redraw_screen()
 
-class TetrisInputProcessor:
-    def setNonBlocking(self, fd):
+@contextlib.contextmanager
+def nonblocking_input():
+    fd = sys.stdin
+    try:
         flags = fcntl.fcntl(fd, FCNTL.F_GETFL)
         flags = flags | os.O_NONBLOCK
         fcntl.fcntl(fd, FCNTL.F_SETFL, flags)
-
-    def setBlocking(self, fd):
+        yield
+    finally:
         flags = fcntl.fcntl(fd, FCNTL.F_GETFL)
         flags = flags & ~os.O_NONBLOCK
         fcntl.fcntl(fd, FCNTL.F_SETFL, flags)
 
+@contextlib.contextmanager
+def tcattr():
+    try:
+        old_settings = termios.tcgetattr(sys.stdin)
+        yield
+    finally:
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+
+
+class TetrisInputProcessor:
     def decrease_move_down_delay(self):
         self.move_down_delay *= DELAY_FACTOR
 
     def run(self):
         self.move_down_delay = INITIAL_MOVE_DOWN_DELAY
-        old_settings = termios.tcgetattr(sys.stdin)
-        try:
+        with nonblocking_input(), tcattr():
         #    tty.setcbreak(sys.stdin.fileno())
             tty.setraw(sys.stdin.fileno())
-            self.setNonBlocking(sys.stdin);
 
             key = [0, 0, 0]
             ts = TetrisScreen()
@@ -443,9 +454,6 @@ class TetrisInputProcessor:
                             cmd()
                             ts.flush()
 
-        finally:
-            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
-            self.setBlocking(sys.stdin)
 
 if __name__ == '__main__':
     TetrisInputProcessor().run()
