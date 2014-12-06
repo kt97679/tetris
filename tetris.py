@@ -200,7 +200,7 @@ class TetrisPlayField:
         return True
 
 class TetrisPiece(TetrisScreenItem):
-    def __init__(self, screen):
+    def __init__(self, screen, origin, visible):
         super(TetrisPiece, self).__init__(screen)
         # 0123
         # 4567
@@ -219,6 +219,8 @@ class TetrisPiece(TetrisScreenItem):
         self.piece_index = random.randint(0, len(self.piece_data) - 1)
         self.symmetry = len(self.piece_data[self.piece_index])
         self.position = 0, 0, random.randint(0, self.symmetry - 1)
+        self.origin = origin
+        self.set_visible(visible)
         self.empty_cell = NEXT_EMPTY_CELL
 
     def get_cells(self, new_position=None):
@@ -234,12 +236,8 @@ class TetrisPiece(TetrisScreenItem):
         else:
             s = self.empty_cell
         for cell in self.get_cells():
-            self.screen.xyprint(self.origin_x + cell[0] * 2, self.origin_y + cell[1], s)
+            self.screen.xyprint(self.origin[0] + cell[0] * 2, self.origin[1] + cell[1], s)
         self.screen.reset_colors()
-
-    def set_origin(self, x, y):
-        self.origin_x = x
-        self.origin_y = y
 
     def set_xy(self, x, y):
         self.position = x, y, self.position[2]
@@ -295,14 +293,16 @@ class TetrisController:
             return
         self.current_piece.set_visible(True)
         self.current_piece.empty_cell = PLAYFIELD_EMPTY_CELL
-        self.current_piece.set_origin(PLAYFIELD_X, PLAYFIELD_Y)
+        self.current_piece.origin = (PLAYFIELD_X, PLAYFIELD_Y)
         self.current_piece.show()
         self.get_next_piece()
 
     def get_next_piece(self):
-        self.next_piece = TetrisPiece(self.screen)
-        self.next_piece.set_origin(NEXT_X, NEXT_Y)
-        self.next_piece.set_visible(self.next_piece_visible)
+        self.next_piece = TetrisPiece(
+            self.screen,
+            (NEXT_X, NEXT_Y),
+            self.next_piece_visible,
+        )
         self.next_piece.show()
 
     def redraw_screen(self):
