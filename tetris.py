@@ -117,9 +117,6 @@ class TetrisScreenItem(object):
         self.visible ^= True
         self.draw(self.visible)
 
-    def set_visible(self, value):
-        self.visible = value
-
 class TetrisHelp(TetrisScreenItem):
     def __init__(self, screen):
         super(TetrisHelp, self).__init__(screen)
@@ -220,7 +217,7 @@ class TetrisPiece(TetrisScreenItem):
         self.symmetry = len(self.piece_data[self.piece_index])
         self.position = 0, 0, random.randint(0, self.symmetry - 1)
         self.origin = origin
-        self.set_visible(visible)
+        self.visible = visible
         self.empty_cell = NEXT_EMPTY_CELL
 
     def get_cells(self, new_position=None):
@@ -291,7 +288,7 @@ class TetrisController:
         if not self.play_field.position_ok(self.current_piece.get_cells()):
             self.cmd_quit()
             return
-        self.current_piece.set_visible(True)
+        self.current_piece.visible = True
         self.current_piece.empty_cell = PLAYFIELD_EMPTY_CELL
         self.current_piece.origin = (PLAYFIELD_X, PLAYFIELD_Y)
         self.current_piece.show()
