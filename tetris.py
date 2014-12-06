@@ -189,12 +189,12 @@ class TetrisPlayField:
         self.screen.reset_colors()
 
     def position_ok(self, cells):
-        for x, y in cells:
-            if x < 0 or x >= PLAYFIELD_W or y < 0 or y >= PLAYFIELD_H:
-                return False
-            if self.cells[y][x] != None:
-                return False
-        return True
+        return all(
+            (0 <= x < PLAYFIELD_W) and
+            (0 <= y < PLAYFIELD_H) and
+            self.cells[y][x] is None
+            for x, y in cells
+        )
 
 class TetrisPiece(TetrisScreenItem):
     def __init__(self, screen, origin, visible):
