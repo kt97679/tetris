@@ -191,8 +191,8 @@ class TetrisPlayField:
             y += 1
         self.screen.reset_colors()
 
-    def position_ok(self, piece, position=None):
-        for cell in piece.get_cells(position):
+    def position_ok(self, cells):
+        for cell in cells:
             if cell[0] < 0 or cell[0] >= PLAYFIELD_W or cell[1] < 0 or cell[1] >= PLAYFIELD_H:
                 return False
             if self.cells[cell[1]][cell[0]] != None:
@@ -290,7 +290,7 @@ class TetrisController:
         self.next_piece.hide()
         self.current_piece = self.next_piece
         self.current_piece.set_xy((PLAYFIELD_W - 4) / 2, 0)
-        if not self.play_field.position_ok(self.current_piece):
+        if not self.play_field.position_ok(self.current_piece.get_cells()):
             self.cmd_quit()
             return
         self.current_piece.set_visible(True)
@@ -327,7 +327,7 @@ class TetrisController:
 
     def move(self, dx, dy, dz):
         position = self.current_piece.new_position(dx, dy, dz)
-        if self.play_field.position_ok(self.current_piece, position):
+        if self.play_field.position_ok(self.current_piece.get_cells(position)):
             self.current_piece.hide()
             self.current_piece.position = position
             self.current_piece.show()
