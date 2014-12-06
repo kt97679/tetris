@@ -197,24 +197,25 @@ class TetrisPlayField:
         )
 
 class TetrisPiece(TetrisScreenItem):
-    def __init__(self, screen, origin, visible):
-        super(TetrisPiece, self).__init__(screen)
+    configurations = [
         # 0123
         # 4567
         # 89ab
         # cdef
-        self.piece_data = [
-            [0x1256], # square
-            [0x159d, 0x4567], # line
-            [0x4512, 0x0459], # s
-            [0x0156, 0x1548], # z
-            [0x159a, 0x8456, 0x0159, 0x2654], # l
-            [0x1598, 0x0456, 0x2159, 0xa654], # inverted l
-            [0x1456, 0x1596, 0x4569, 0x4159]  # t
-        ]
+        [0x1256], # square
+        [0x159d, 0x4567], # line
+        [0x4512, 0x0459], # s
+        [0x0156, 0x1548], # z
+        [0x159a, 0x8456, 0x0159, 0x2654], # l
+        [0x1598, 0x0456, 0x2159, 0xa654], # inverted l
+        [0x1456, 0x1596, 0x4569, 0x4159]  # t
+    ]
+
+    def __init__(self, screen, origin, visible):
+        super(TetrisPiece, self).__init__(screen)
         self.color = screen.get_random_color()
-        self.piece_index = random.randint(0, len(self.piece_data) - 1)
-        self.symmetry = len(self.piece_data[self.piece_index])
+        self.data = random.choice(self.configurations)
+        self.symmetry = len(self.data)
         self.position = 0, 0, random.randint(0, self.symmetry - 1)
         self.origin = origin
         self.visible = visible
@@ -222,7 +223,7 @@ class TetrisPiece(TetrisScreenItem):
 
     def get_cells(self, new_position=None):
         x, y, z = new_position or self.position
-        data = self.piece_data[self.piece_index][z]
+        data = self.data[z]
         return [[x + ((data >> (i * 4)) & 3), y + ((data >> (i * 4 + 2)) & 3)] for i in range(0, 4)]
 
     def draw(self, visible):
