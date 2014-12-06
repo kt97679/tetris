@@ -191,8 +191,8 @@ class TetrisPlayField:
             y += 1
         self.screen.reset_colors()
 
-    def position_ok(self, piece):
-        for cell in piece.get_cells():
+    def position_ok(self, piece, position=None):
+        for cell in piece.get_cells(position):
             if cell[0] < 0 or cell[0] >= PLAYFIELD_W or cell[1] < 0 or cell[1] >= PLAYFIELD_H:
                 return False
             if self.cells[cell[1]][cell[0]] != None:
@@ -218,14 +218,13 @@ class TetrisPiece(TetrisScreenItem):
         self.color = screen.get_random_color()
         self.piece_index = random.randint(0, len(self.piece_data) - 1)
         self.symmetry = len(self.piece_data[self.piece_index])
-        self.x = 0
-        self.y = 0
-        self.z = random.randint(0, self.symmetry - 1)
+        self.position = 0, 0, random.randint(0, self.symmetry - 1)
         self.empty_cell = NEXT_EMPTY_CELL
 
-    def get_cells(self):
-        data = self.piece_data[self.piece_index][self.z]
-        return [[self.x + ((data >> (i * 4)) & 3), self.y + ((data >> (i * 4 + 2)) & 3)] for i in range(0, 4)]
+    def get_cells(self, new_position=None):
+        x, y, z = new_position or self.position
+        data = self.piece_data[self.piece_index][z]
+        return [[x + ((data >> (i * 4)) & 3), y + ((data >> (i * 4 + 2)) & 3)] for i in range(0, 4)]
 
     def draw(self, visible):
         if visible:
@@ -243,21 +242,11 @@ class TetrisPiece(TetrisScreenItem):
         self.origin_y = y
 
     def set_xy(self, x, y):
-        self.x = x
-        self.y = y
+        self.position = x, y, self.position[2]
 
-    def move(self, dx, dy, dz):
-        self._x = self.x
-        self._y = self.y
-        self._z = self.z
-        self.x += dx
-        self.y += dy
-        self.z = (self.z + dz) % self.symmetry
-
-    def unmove(self):
-        self.x = self._x
-        self.y = self._y
-        self.z = self._z
+    def new_position(self, dx, dy, dz):
+        x, y, z = self.position
+        return x + dx, y + dy, (z + dz) % self.symmetry
 
 class TetrisScore:
     def __init__(self, screen, tetris_input_processor):
@@ -337,12 +326,10 @@ class TetrisController:
             self.play_field.show()
 
     def move(self, dx, dy, dz):
-        self.current_piece.move(dx, dy, dz)
-        new_position_ok = self.play_field.position_ok(self.current_piece)
-        self.current_piece.unmove()
-        if new_position_ok:
+        position = self.current_piece.new_position(dx, dy, dz)
+        if self.play_field.position_ok(self.current_piece, position):
             self.current_piece.hide()
-            self.current_piece.move(dx, dy, dz)
+            self.current_piece.position = position
             self.current_piece.show()
             return True
         if dy == 0:
