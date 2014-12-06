@@ -189,10 +189,10 @@ class TetrisPlayField:
         self.screen.reset_colors()
 
     def position_ok(self, cells):
-        for cell in cells:
-            if cell[0] < 0 or cell[0] >= PLAYFIELD_W or cell[1] < 0 or cell[1] >= PLAYFIELD_H:
+        for x, y in cells:
+            if x < 0 or x >= PLAYFIELD_W or y < 0 or y >= PLAYFIELD_H:
                 return False
-            if self.cells[cell[1]][cell[0]] != None:
+            if self.cells[y][x] != None:
                 return False
         return True
 
