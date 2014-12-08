@@ -222,11 +222,11 @@ class TetrisPlayField
     end
 
     def position_ok?(piece, position = nil)
-        piece.get_cells(position).each do |cell|
-            if cell[0] < 0 || cell[0] >= PLAYFIELD_W || cell[1] < 0 || cell[1] >= PLAYFIELD_H
+        piece.get_cells(position).each do |x, y|
+            if x < 0 || x >= PLAYFIELD_W || y < 0 || y >= PLAYFIELD_H
                 return false
             end
-            if @cells[cell[1]][cell[0]] != nil
+            if @cells[y][x] != nil
                 return false
             end
         end
