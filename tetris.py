@@ -12,6 +12,7 @@ if (sys.hexversion >> 16) >= 0x202:
     FCNTL = fcntl
 else:
     import FCNTL
+import contextlib
 
 PLAYFIELD_W = 10
 PLAYFIELD_H = 20
@@ -116,9 +117,6 @@ class TetrisScreenItem(object):
         self.visible ^= True
         self.draw(self.visible)
 
-    def set_visible(self, value):
-        self.visible = value
-
 class TetrisHelp(TetrisScreenItem):
     def __init__(self, screen):
         super(TetrisHelp, self).__init__(screen)
@@ -190,41 +188,43 @@ class TetrisPlayField:
             y += 1
         self.screen.reset_colors()
 
-    def position_ok(self, piece):
-        for cell in piece.get_cells():
-            if cell[0] < 0 or cell[0] >= PLAYFIELD_W or cell[1] < 0 or cell[1] >= PLAYFIELD_H:
-                return False
-            if self.cells[cell[1]][cell[0]] != None:
-                return False
-        return True
+    def position_ok(self, cells):
+        return all(
+            (0 <= x < PLAYFIELD_W) and
+            (0 <= y < PLAYFIELD_H) and
+            self.cells[y][x] is None
+            for x, y in cells
+        )
 
 class TetrisPiece(TetrisScreenItem):
-    def __init__(self, screen):
-        super(TetrisPiece, self).__init__(screen)
+    configurations = [
         # 0123
         # 4567
         # 89ab
         # cdef
-        self.piece_data = [
-            [0x1256], # square
-            [0x159d, 0x4567], # line
-            [0x4512, 0x0459], # s
-            [0x0156, 0x1548], # z
-            [0x159a, 0x8456, 0x0159, 0x2654], # l
-            [0x1598, 0x0456, 0x2159, 0xa654], # inverted l
-            [0x1456, 0x1596, 0x4569, 0x4159]  # t
-        ]
+        [0x1256], # square
+        [0x159d, 0x4567], # line
+        [0x4512, 0x0459], # s
+        [0x0156, 0x1548], # z
+        [0x159a, 0x8456, 0x0159, 0x2654], # l
+        [0x1598, 0x0456, 0x2159, 0xa654], # inverted l
+        [0x1456, 0x1596, 0x4569, 0x4159]  # t
+    ]
+
+    def __init__(self, screen, origin, visible):
+        super(TetrisPiece, self).__init__(screen)
         self.color = screen.get_random_color()
-        self.piece_index = random.randint(0, len(self.piece_data) - 1)
-        self.symmetry = len(self.piece_data[self.piece_index])
-        self.x = 0
-        self.y = 0
-        self.z = random.randint(0, self.symmetry - 1)
+        self.data = random.choice(self.configurations)
+        self.symmetry = len(self.data)
+        self.position = 0, 0, random.randint(0, self.symmetry - 1)
+        self.origin = origin
+        self.visible = visible
         self.empty_cell = NEXT_EMPTY_CELL
 
-    def get_cells(self):
-        data = self.piece_data[self.piece_index][self.z]
-        return [[self.x + ((data >> (i * 4)) & 3), self.y + ((data >> (i * 4 + 2)) & 3)] for i in range(0, 4)]
+    def get_cells(self, new_position=None):
+        x, y, z = new_position or self.position
+        data = self.data[z]
+        return [[x + ((data >> (i * 4)) & 3), y + ((data >> (i * 4 + 2)) & 3)] for i in range(0, 4)]
 
     def draw(self, visible):
         if visible:
@@ -234,29 +234,15 @@ class TetrisPiece(TetrisScreenItem):
         else:
             s = self.empty_cell
         for cell in self.get_cells():
-            self.screen.xyprint(self.origin_x + cell[0] * 2, self.origin_y + cell[1], s)
+            self.screen.xyprint(self.origin[0] + cell[0] * 2, self.origin[1] + cell[1], s)
         self.screen.reset_colors()
 
-    def set_origin(self, x, y):
-        self.origin_x = x
-        self.origin_y = y
-
     def set_xy(self, x, y):
-        self.x = x
-        self.y = y
+        self.position = x, y, self.position[2]
 
-    def move(self, dx, dy, dz):
-        self._x = self.x
-        self._y = self.y
-        self._z = self.z
-        self.x += dx
-        self.y += dy
-        self.z = (self.z + dz) % self.symmetry
-
-    def unmove(self):
-        self.x = self._x
-        self.y = self._y
-        self.z = self._z
+    def new_position(self, dx, dy, dz):
+        x, y, z = self.position
+        return x + dx, y + dy, (z + dz) % self.symmetry
 
 class TetrisScore:
     def __init__(self, screen, tetris_input_processor):
@@ -271,7 +257,7 @@ class TetrisScore:
         self.score += (complete_lines * complete_lines)
         if self.score > LEVEL_UP * self.level:
             self.level += 1
-            self.tetris_input_processor.decrease_move_down_delay()
+            self.tetris_input_processor.decrease_delay()
         self.show()
 
     def show(self):
@@ -300,19 +286,21 @@ class TetrisController:
         self.next_piece.hide()
         self.current_piece = self.next_piece
         self.current_piece.set_xy((PLAYFIELD_W - 4) / 2, 0)
-        if not self.play_field.position_ok(self.current_piece):
+        if not self.play_field.position_ok(self.current_piece.get_cells()):
             self.cmd_quit()
             return
-        self.current_piece.set_visible(True)
+        self.current_piece.visible = True
         self.current_piece.empty_cell = PLAYFIELD_EMPTY_CELL
-        self.current_piece.set_origin(PLAYFIELD_X, PLAYFIELD_Y)
+        self.current_piece.origin = (PLAYFIELD_X, PLAYFIELD_Y)
         self.current_piece.show()
         self.get_next_piece()
 
     def get_next_piece(self):
-        self.next_piece = TetrisPiece(self.screen)
-        self.next_piece.set_origin(NEXT_X, NEXT_Y)
-        self.next_piece.set_visible(self.next_piece_visible)
+        self.next_piece = TetrisPiece(
+            self.screen,
+            (NEXT_X, NEXT_Y),
+            self.next_piece_visible,
+        )
         self.next_piece.show()
 
     def redraw_screen(self):
@@ -336,12 +324,10 @@ class TetrisController:
             self.play_field.show()
 
     def move(self, dx, dy, dz):
-        self.current_piece.move(dx, dy, dz)
-        new_position_ok = self.play_field.position_ok(self.current_piece)
-        self.current_piece.unmove()
-        if new_position_ok:
+        position = self.current_piece.new_position(dx, dy, dz)
+        if self.play_field.position_ok(self.current_piece.get_cells(position)):
             self.current_piece.hide()
-            self.current_piece.move(dx, dy, dz)
+            self.current_piece.position = position
             self.current_piece.show()
             return True
         if dy == 0:
@@ -379,73 +365,84 @@ class TetrisController:
         self.screen.toggle_color()
         self.redraw_screen()
 
-class TetrisInputProcessor:
-    def setNonBlocking(self, fd):
+@contextlib.contextmanager
+def nonblocking_input():
+    fd = sys.stdin
+    try:
         flags = fcntl.fcntl(fd, FCNTL.F_GETFL)
         flags = flags | os.O_NONBLOCK
         fcntl.fcntl(fd, FCNTL.F_SETFL, flags)
-
-    def setBlocking(self, fd):
+        yield
+    finally:
         flags = fcntl.fcntl(fd, FCNTL.F_GETFL)
         flags = flags & ~os.O_NONBLOCK
         fcntl.fcntl(fd, FCNTL.F_SETFL, flags)
 
-    def decrease_move_down_delay(self):
-        self.move_down_delay *= DELAY_FACTOR
-
-    def run(self):
-        self.move_down_delay = INITIAL_MOVE_DOWN_DELAY
+@contextlib.contextmanager
+def tcattr():
+    try:
         old_settings = termios.tcgetattr(sys.stdin)
-        try:
-        #    tty.setcbreak(sys.stdin.fileno())
-            tty.setraw(sys.stdin.fileno())
-            self.setNonBlocking(sys.stdin);
+        yield
+    finally:
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
-            key = [0, 0, 0]
-            ts = TetrisScreen()
-            ts.clear_screen()
-            tc = TetrisController(ts, self)
-            commands = {
-                "\x03": tc.cmd_quit,
-                "q": tc.cmd_quit,
-                "C": tc.cmd_right,
-                "d": tc.cmd_right,
-                "D": tc.cmd_left,
-                "a": tc.cmd_left,
-                "A": tc.cmd_rotate,
-                "s": tc.cmd_rotate,
-                " ": tc.cmd_drop,
-                "h": tc.toggle_help,
-                "n": tc.toggle_next,
-                "c": tc.toggle_color
-            }
-            last_move_down_time = time.time()
-            while tc.running:
-                cmd = None
-                now = time.time()
-                select_timeout = self.move_down_delay - (now - last_move_down_time)
-                if select_timeout < 0:
-                    tc.cmd_down()
-                    ts.flush()
-                    last_move_down_time = now
-                    select_timeout = self.move_down_delay
-                if select.select([sys.stdin], [], [], self.move_down_delay)[0]:
-                    s = sys.stdin.read(16)
-                    for c in s:
-                        key[2] = key[1]
-                        key[1] = key[0]
-                        key[0] = c
-                        if key[2] == '\x1b' and key[1] == '[':         # x1b is ESC
-                            cmd = commands.get(key[0], None)
-                        else:
-                            cmd = commands.get(key[0].lower(), None)
-                        if cmd:
-                            cmd()
-                            ts.flush()
 
-        finally:
-            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
-            self.setBlocking(sys.stdin)
+class TetrisInputProcessor:
+    delay = INITIAL_MOVE_DOWN_DELAY
 
-TetrisInputProcessor().run()
+    def decrease_delay(self):
+        self.delay *= DELAY_FACTOR
+
+
+def run():
+    input_processor = TetrisInputProcessor()
+    with nonblocking_input(), tcattr():
+    #    tty.setcbreak(sys.stdin.fileno())
+        tty.setraw(sys.stdin.fileno())
+
+        key = [0, 0, 0]
+        ts = TetrisScreen()
+        ts.clear_screen()
+        tc = TetrisController(ts, input_processor)
+        commands = {
+            "\x03": tc.cmd_quit,
+            "q": tc.cmd_quit,
+            "C": tc.cmd_right,
+            "d": tc.cmd_right,
+            "D": tc.cmd_left,
+            "a": tc.cmd_left,
+            "A": tc.cmd_rotate,
+            "s": tc.cmd_rotate,
+            " ": tc.cmd_drop,
+            "h": tc.toggle_help,
+            "n": tc.toggle_next,
+            "c": tc.toggle_color
+        }
+        last_move_down_time = time.time()
+        while tc.running:
+            cmd = None
+            now = time.time()
+            select_timeout = input_processor.delay - (now - last_move_down_time)
+            if select_timeout < 0:
+                tc.cmd_down()
+                ts.flush()
+                last_move_down_time = now
+                select_timeout = input_processor.delay
+            if select.select([sys.stdin], [], [], input_processor.delay)[0]:
+                s = sys.stdin.read(16)
+                for c in s:
+                    key[2] = key[1]
+                    key[1] = key[0]
+                    key[0] = c
+                    if key[2] == '\x1b' and key[1] == '[':         # x1b is ESC
+                        cmd = commands.get(key[0], None)
+                    else:
+                        cmd = commands.get(key[0].lower(), None)
+                    if cmd:
+                        cmd()
+                        ts.flush()
+
+
+if __name__ == '__main__':
+    run()
 
