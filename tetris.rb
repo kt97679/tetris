@@ -221,8 +221,8 @@ class TetrisPlayField
         @screen.reset_colors()
     end
 
-    def position_ok?(piece)
-        piece.get_cells().each do |cell|
+    def position_ok?(piece, position = nil)
+        piece.get_cells(position).each do |cell|
             if cell[0] < 0 || cell[0] >= PLAYFIELD_W || cell[1] < 0 || cell[1] >= PLAYFIELD_H
                 return false
             end
@@ -257,15 +257,14 @@ class TetrisPiece < TetrisScreenItem
         @color = @screen.get_random_color()
         @piece_index = rand(@@piece_data.size)
         @symmetry = @@piece_data[@piece_index].size
-        @x = 0
-        @y = 0
-        @z = rand(@symmetry)
+        @position = 0, 0, rand(@symmetry)
         @empty_cell = NEXT_EMPTY_CELL
     end
 
-    def get_cells()
-        data = @@piece_data[@piece_index][@z]
-        (0..3).map {|i| data >> (4 * i)}.inject([]) {|x, i| x << [@x + (i & 3), @y + ((i >> 2) & 3)]}
+    def get_cells(new_position = nil)
+        x, y, z = new_position || @position
+        data = @@piece_data[@piece_index][z]
+        (0..3).map {|i| data >> (4 * i)}.inject([]) {|c, i| c << [x + (i & 3), y + ((i >> 2) & 3)]}
     end
 
     def draw(visible)
@@ -284,24 +283,13 @@ class TetrisPiece < TetrisScreenItem
         @origin_y = y
     end
 
-    def set_xy(x, y)
-        @x = x
-        @y = y
+    def set_position(p)
+        @position = p[0], p[1], p[2] || @position[2]
     end
 
-    def move(dx, dy, dz)
-        @_x = @x
-        @_y = @y
-        @_z = @z
-        @x += dx
-        @y += dy
-        @z = (@z + dz) % @symmetry
-    end
-
-    def unmove()
-        @x = @_x
-        @y = @_y
-        @z = @_z
+    def new_position(dx, dy, dz)
+        x, y, z = @position
+        return x += dx, y += dy, (z + dz) % @symmetry
     end
 end
 
@@ -352,7 +340,7 @@ class TetrisController
     def get_current_piece()
         @next_piece.hide()
         @current_piece = @next_piece
-        @current_piece.set_xy((PLAYFIELD_W - 4) / 2, 0)
+        @current_piece.set_position([(PLAYFIELD_W - 4) / 2, 0])
         if ! @play_field.position_ok?(@current_piece)
             process(:cmd_quit)
             return
@@ -395,12 +383,10 @@ class TetrisController
     end
 
     def move(dx, dy, dz)
-        @current_piece.move(dx, dy, dz)
-        new_position_ok = @play_field.position_ok?(@current_piece)
-        @current_piece.unmove()
-        if new_position_ok
+        new_position = @current_piece.new_position(dx, dy, dz)
+        if @play_field.position_ok?(@current_piece, new_position)
             @current_piece.hide()
-            @current_piece.move(dx, dy, dz)
+            @current_piece.set_position(new_position)
             @current_piece.show()
             return true
         end
