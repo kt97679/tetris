@@ -111,7 +111,7 @@ class TetrisScreen
     end
 
     def get_random_color()
-        return @@color.keys.shuffle.first
+        return @@color.keys.sample
     end
 
     def toggle_color()
@@ -193,8 +193,8 @@ class TetrisPlayField
     end
 
     def flatten_piece(piece)
-        piece.get_cells().each do |cell|
-            @cells[cell[1]][cell[0]] = piece.color
+        piece.get_cells().each do |x, y|
+            @cells[y][x] = piece.color
         end
     end
 
@@ -266,8 +266,8 @@ class TetrisPiece < TetrisScreenItem
             @screen.set_fg(@color)
             @screen.set_bg(@color)
         end
-        get_cells().each do |cell|
-            @screen.xyprint(@origin_x + cell[0] * 2, @origin_y + cell[1], visible ? FILLED_CELL : @empty_cell)
+        get_cells().each do |x, y|
+            @screen.xyprint(@origin_x + x * 2, @origin_y + y, visible ? FILLED_CELL : @empty_cell)
         end
         @screen.reset_colors()
     end
