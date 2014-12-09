@@ -62,6 +62,7 @@ class TetrisScreen
         :cyan => 6,
         :white => 7
     }
+
     def initialize
         @s = ""
         @use_color = true
@@ -109,7 +110,7 @@ class TetrisScreen
     end
 
     def get_random_color()
-        return @@color.keys.sample
+        @@color.keys.sample
     end
 
     def toggle_color()
@@ -225,7 +226,7 @@ class TetrisPlayField
 end
 
 class TetrisPiece < TetrisScreenItem
-    attr_accessor :empty_cell
+    attr_accessor :empty_cell, :origin
     attr_reader :color
 
     # 0123
@@ -242,18 +243,20 @@ class TetrisPiece < TetrisScreenItem
         [0x1456, 0x1596, 0x4569, 0x4159]  # t
     ]
 
-    def initialize(screen)
+    def initialize(screen, origin, visible)
         super(screen)
+        @origin = origin
+        @visible = visible
         @color = @screen.get_random_color()
-        @piece_index = rand(@@piece_data.size)
-        @symmetry = @@piece_data[@piece_index].size
+        @data = @@piece_data.sample
+        @symmetry = @data.size
         @position = 0, 0, rand(@symmetry)
         @empty_cell = NEXT_EMPTY_CELL
     end
 
     def get_cells(new_position = nil)
         x, y, z = new_position || @position
-        data = @@piece_data[@piece_index][z]
+        data = @data[z]
         (0..3).map {|i| data >> (4 * i)}.inject([]) {|c, i| c << [x + (i & 3), y + ((i >> 2) & 3)]}
     end
 
@@ -262,15 +265,11 @@ class TetrisPiece < TetrisScreenItem
             @screen.set_fg(@color)
             @screen.set_bg(@color)
         end
+        ox, oy = @origin
         get_cells().each do |x, y|
-            @screen.xyprint(@origin_x + x * 2, @origin_y + y, visible ? FILLED_CELL : @empty_cell)
+            @screen.xyprint(ox + x * 2, oy + y, visible ? FILLED_CELL : @empty_cell)
         end
         @screen.reset_colors()
-    end
-
-    def set_origin(x, y)
-        @origin_x = x
-        @origin_y = y
     end
 
     def set_position(p)
@@ -337,15 +336,13 @@ class TetrisController
         end
         @current_piece.visible = true
         @current_piece.empty_cell = PLAYFIELD_EMPTY_CELL
-        @current_piece.set_origin(PLAYFIELD_X, PLAYFIELD_Y)
+        @current_piece.origin = [PLAYFIELD_X, PLAYFIELD_Y]
         @current_piece.show()
         get_next_piece()
     end
 
     def get_next_piece()
-        @next_piece = TetrisPiece.new(@screen)
-        @next_piece.set_origin(NEXT_X, NEXT_Y)
-        @next_piece.visible = @next_piece_visible
+        @next_piece = TetrisPiece.new(@screen, [NEXT_X, NEXT_Y], @next_piece_visible)
         @next_piece.show()
     end
 
