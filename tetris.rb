@@ -64,7 +64,7 @@ class TetrisScreen
     }
     def initialize
         @s = ""
-        @no_color = false
+        @use_color = true
     end
 
     def print(s)
@@ -84,13 +84,11 @@ class TetrisScreen
     end
 
     def set_fg(c)
-        return if @no_color
-        @s += "\e[3#{@@color[c]}m"
+        @use_color && @s += "\e[3#{@@color[c]}m"
     end
 
     def set_bg(c)
-        return if @no_color
-        @s += "\e[4#{@@color[c]}m"
+        @use_color && @s += "\e[4#{@@color[c]}m"
     end
 
     def reset_colors()
@@ -115,7 +113,7 @@ class TetrisScreen
     end
 
     def toggle_color()
-        @no_color ^= true
+        @use_color ^= true
     end
 end
 
