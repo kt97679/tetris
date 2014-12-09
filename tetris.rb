@@ -120,6 +120,8 @@ class TetrisScreen
 end
 
 class TetrisScreenItem
+    attr_accessor :visible
+
     def initialize(screen)
         @visible = true
         @screen = screen
@@ -136,10 +138,6 @@ class TetrisScreenItem
     def toggle()
         @visible ^= true
         draw(@visible)
-    end
-
-    def set_visible(value)
-        @visible = value
     end
 end
 
@@ -339,7 +337,7 @@ class TetrisController
             process(:cmd_quit)
             return
         end
-        @current_piece.set_visible(true)
+        @current_piece.visible = true
         @current_piece.empty_cell = PLAYFIELD_EMPTY_CELL
         @current_piece.set_origin(PLAYFIELD_X, PLAYFIELD_Y)
         @current_piece.show()
@@ -349,7 +347,7 @@ class TetrisController
     def get_next_piece()
         @next_piece = TetrisPiece.new(@screen)
         @next_piece.set_origin(NEXT_X, NEXT_Y)
-        @next_piece.set_visible(@next_piece_visible)
+        @next_piece.visible = @next_piece_visible
         @next_piece.show()
     end
 
