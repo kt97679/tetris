@@ -1,5 +1,4 @@
 tetris
 ===========
 
-Tetris game implemented in pure bash, ruby, server side javascript and python.
-
+Tetris game implemented in languages I used for something more serious than "Hello world".
