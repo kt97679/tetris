@@ -178,44 +178,44 @@ class TetrisScreen {
     }
 
     public void showCursor() {
-        this.s += "\u001B[?25h";
+        s += "\u001B[?25h";
     }
 
     public void hideCursor() {
-        this.s += "\u001B[?25l";
+        s += "\u001B[?25l";
     }
 
     public void setFg(TetrisColor c) {
         if (useColor) {
-            this.s += ("\u001B[3" + c.value + "m");
+            s += ("\u001B[3" + c.value + "m");
         }
     }
 
     public void setBg(TetrisColor c) {
         if (useColor) {
-            this.s += ("\u001B[4" + c.value + "m");
+            s += ("\u001B[4" + c.value + "m");
         }
     }
 
     public void resetColors() {
-        this.s += "\u001B[0m";
+        s += "\u001B[0m";
     }
 
     public void setBold() {
-        this.s += "\u001B[1m";
+        s += "\u001B[1m";
     }
 
     public void clearScreen() {
-        this.s += "\u001B[2J";
+        s += "\u001B[2J";
     }
 
     public void flush() {
-        System.out.print(this.s);
-        this.s = "";
+        System.out.print(s);
+        s = "";
     }
 
     public void toggleColor() {
-        this.useColor ^= true;
+        useColor ^= true;
     }
 }
 
@@ -226,25 +226,25 @@ abstract class TetrisScreenItem {
     public abstract void draw(boolean visible);
 
     public TetrisScreenItem(TetrisScreen screen) {
-        this.visible = true;
+        visible = true;
         this.screen = screen;
     }
 
     public void show() {
-        if (this.visible) {
+        if (visible) {
             draw(true);
         }
     }
 
     public void hide() {
-        if (this.visible) {
+        if (visible) {
             draw(false);
         }
     }
 
     public void toggle() {
-        this.visible ^= true;
-        draw(this.visible);
+        visible ^= true;
+        draw(visible);
     }
 }
 
@@ -267,16 +267,16 @@ class TetrisHelp extends TetrisScreenItem {
     }
 
     public void draw(boolean visible) {
-        this.screen.setBold();
-        this.screen.setFg(this.color);
-        for (int i = 0; i < this.text.length; i++) {
-            String s = this.text[i];
+        screen.setBold();
+        screen.setFg(color);
+        for (int i = 0; i < text.length; i++) {
+            String s = text[i];
             if (! visible) {
                 s = new String(new char[s.length()]).replace("\0", " ");
             }
-            this.screen.xyprint(Tetris.HELP_X, Tetris.HELP_Y + i, s);
+            screen.xyprint(Tetris.HELP_X, Tetris.HELP_Y + i, s);
         }
-        this.screen.resetColors();
+        screen.resetColors();
     }
 }
 
@@ -291,10 +291,10 @@ class TetrisScore {
     }
 
     public void update(int completeLines) {
-        this.linesCompleted += completeLines;
-        this.score += (completeLines * completeLines);
-        if (this.score > Tetris.LEVEL_UP * this.level) {
-            this.level += 1;
+        linesCompleted += completeLines;
+        score += (completeLines * completeLines);
+        if (score > Tetris.LEVEL_UP * level) {
+            level += 1;
             TetrisTicker.decreaseDelay();
         }
         show();
@@ -462,7 +462,7 @@ class TetrisPiece extends TetrisScreenItem {
     }
 
     public void setPosition(int[] p) {
-        this.position = new int[]{p[0], p[1], p[2] < 0 ? this.position[2] : p[2]};
+        position = new int[]{p[0], p[1], p[2] < 0 ? position[2] : p[2]};
     }
 
     public int[] newPosition(int dx, int dy, int dz) {
