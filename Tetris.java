@@ -37,73 +37,70 @@ public class Tetris {
     public static final Random RANDOM = new Random();
 
     public static void main(String[] args) {
-        try {
-            new Tetris().run();
-        } catch (IOException ioe) {
-        } catch (InterruptedException ie) {
-        }
+        new Tetris().run();
     }
 
-    public void run() throws IOException, InterruptedException {
+    public void run() {
         try {
             String[] cmd = {"/bin/sh", "-c", "stty raw -echo </dev/tty"};
             Runtime.getRuntime().exec(cmd).waitFor();
-            Console console = System.console();
-            Reader reader = console.reader();
-            TetrisScreen screen = new TetrisScreen();
-            TetrisController tc = new TetrisController(screen);
-            Object lock = new Object();
-            TetrisTicker tt = new TetrisTicker(tc, lock);
-            tt.start();
-            char key[] = {0, 0, 0};
-            while (tc.running) {
-                key[2] = key[1];
-                key[1] = key[0];
+        } catch (IOException ioe) {
+        } catch (InterruptedException ie) {
+        }
+        TetrisScreen screen = new TetrisScreen();
+        TetrisController tc = new TetrisController(screen);
+        Object lock = new Object();
+        TetrisTicker tt = new TetrisTicker(tc, lock);
+        Console console = System.console();
+        Reader reader = console.reader();
+        tt.start();
+        char key[] = {0, 0, 0};
+        while (tc.running) {
+            key[2] = key[1];
+            key[1] = key[0];
+            try {
                 if (key[2] == 27 && key[1] == '[') {
                     key[0] = (char)reader.read();
                 } else {
                     key[0] = Character.toLowerCase((char)reader.read());
                 }
-                synchronized(lock) {
-                    switch(key[0]) {
-                        case 3:
-                        case 'q':
-                            tc.cmdQuit();
-                            break;
-                        case 'C':
-                        case 'd':
-                            tc.cmdRight();
-                            break;
-                        case 'D':
-                        case 'a':
-                            tc.cmdLeft();
-                            break;
-                        case 'A':
-                        case 's':
-                            tc.cmdRotate();
-                            break;
-                        case ' ':
-                            tc.cmdDrop();
-                            break;
-                        case 'h':
-                            tc.cmdToggleHelp();
-                            break;
-                        case 'n':
-                            tc.cmdToggleNext();
-                            break;
-                        case 'c':
-                            tc.cmdToggleColor();
-                            break;
-                        default:
-                            break;
-                    }
-                    screen.flush();
-                }
+            } catch (IOException ioe) {
             }
-            tt.shutdown();
-        } finally {
-            String[] cmd = new String[] {"/bin/sh", "-c", "stty sane </dev/tty"};
-            Runtime.getRuntime().exec(cmd).waitFor();
+            synchronized(lock) {
+                switch(key[0]) {
+                    case 3:
+                    case 'q':
+                        tc.cmdQuit();
+                        break;
+                    case 'C':
+                    case 'd':
+                        tc.cmdRight();
+                        break;
+                    case 'D':
+                    case 'a':
+                        tc.cmdLeft();
+                        break;
+                    case 'A':
+                    case 's':
+                        tc.cmdRotate();
+                        break;
+                    case ' ':
+                        tc.cmdDrop();
+                        break;
+                    case 'h':
+                        tc.cmdToggleHelp();
+                        break;
+                    case 'n':
+                        tc.cmdToggleNext();
+                        break;
+                    case 'c':
+                        tc.cmdToggleColor();
+                        break;
+                    default:
+                        break;
+                }
+                screen.flush();
+            }
         }
     }
 }
@@ -112,7 +109,6 @@ class TetrisTicker extends Thread {
     private static int delay = Tetris.INITIAL_MOVE_DOWN_DELAY;
     private TetrisController tc = null;
     private Object lock = null;
-    private boolean go = true;
 
     public TetrisTicker(TetrisController tc, Object lock) {
         this.tc = tc;
@@ -123,21 +119,15 @@ class TetrisTicker extends Thread {
         delay *= Tetris.DELAY_FACTOR;
     }
 
-    public void shutdown() {
-        go = false;
-    }
-
     public void run() {
-        while (go) {
+        while (true) {
             try {
                 Thread.sleep(delay);
             } catch (java.lang.InterruptedException ie) {
             }
-            if (go) {
-                synchronized(lock) {
-                    tc.cmdDown();
-                    tc.screenFlush();
-                }
+            synchronized(lock) {
+                tc.cmdDown();
+                tc.screenFlush();
             }
         }
     }
@@ -167,51 +157,51 @@ enum TetrisColor {
 
 class TetrisScreen {
     private boolean useColor = true;
-    private String s = "";
+    private StringBuffer sb = new StringBuffer();;
 
     public void print(String s) {
-        this.s += s;
+        sb.append(s);
     }
 
     public void xyprint(int x, int y, String s) {
-        this.s += ("\u001B[" + y + ";" + x + "H" + s);
+        sb.append("\u001B[" + y + ";" + x + "H" + s);
     }
 
     public void showCursor() {
-        s += "\u001B[?25h";
+        sb.append("\u001B[?25h");
     }
 
     public void hideCursor() {
-        s += "\u001B[?25l";
+        sb.append("\u001B[?25l");
     }
 
     public void setFg(TetrisColor c) {
         if (useColor) {
-            s += ("\u001B[3" + c.value + "m");
+            sb.append("\u001B[3" + c.value + "m");
         }
     }
 
     public void setBg(TetrisColor c) {
         if (useColor) {
-            s += ("\u001B[4" + c.value + "m");
+            sb.append("\u001B[4" + c.value + "m");
         }
     }
 
     public void resetColors() {
-        s += "\u001B[0m";
+        sb.append("\u001B[0m");
     }
 
     public void setBold() {
-        s += "\u001B[1m";
+        sb.append("\u001B[1m");
     }
 
     public void clearScreen() {
-        s += "\u001B[2J";
+        sb.append("\u001B[2J");
     }
 
     public void flush() {
-        System.out.print(s);
-        s = "";
+        System.out.print(sb.toString());
+        sb.setLength(0);
     }
 
     public void toggleColor() {
@@ -534,6 +524,14 @@ class TetrisController {
         screen.xyprint(Tetris.GAMEOVER_X, Tetris.GAMEOVER_Y, "Game over!");
         screen.xyprint(Tetris.GAMEOVER_X, Tetris.GAMEOVER_Y + 1, "");
         screen.showCursor();
+        screen.flush();
+        try {
+            String[] cmd = new String[] {"/bin/sh", "-c", "stty sane </dev/tty"};
+            Runtime.getRuntime().exec(cmd).waitFor();
+        } catch (IOException ioe) {
+        } catch (InterruptedException ie) {
+        }
+        System.exit(0);
     }
 
     public void cmdRotate() {
