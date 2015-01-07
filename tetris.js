@@ -138,18 +138,11 @@ TetrisPlayField.prototype.show = function() {
 }
 
 TetrisPlayField.prototype.position_ok = function(piece, position) {
-    var cells = piece.get_cells(position);
-    for (var i = 0; i < cells.length; i++) {
-        var x = cells[i].x;
-        var y = cells[i].y;
-        if (x < 0 || x >= PLAYFIELD_W || y < 0 || y >= PLAYFIELD_H) {
-            return false;
-        }
-        if (this.cells[y][x] != undefined) {
-            return false;
-        }
-    }
-    return true;
+    return piece.get_cells(position).every(function(cell) {
+        var x = cell.x;
+        var y = cell.y;
+        return (x >= 0 && x < PLAYFIELD_W && y >= 0 && y < PLAYFIELD_H && this.cells[y][x] == undefined);
+    }, this);
 }
 
 TetrisPlayField.prototype.flatten_piece = function(piece) {
@@ -321,10 +314,6 @@ TetrisPiece.prototype.new_position = function(dx, dy, dz) {
     }
 }
 
-TetrisPiece.prototype.set_position = function(p) {
-    this.position = p;
-}
-
 function TetrisController(tetris_input_processor) {
     this.tetris_input_processor = tetris_input_processor;
     this.screen = new TetrisScreen();
@@ -347,7 +336,7 @@ TetrisController.prototype.get_next_piece = function() {
 TetrisController.prototype.get_current_piece = function() {
     this.next_piece.hide();
     this.current_piece = this.next_piece;
-    this.current_piece.set_position({x: (PLAYFIELD_W - 4) / 2, y: 0, z: this.current_piece.position.z});
+    this.current_piece.position = {x: (PLAYFIELD_W - 4) / 2, y: 0, z: this.current_piece.position.z};
     if (! this.playfield.position_ok(this.current_piece)) {
         this.quit();
     }
@@ -409,7 +398,7 @@ TetrisController.prototype.move = function(dx, dy, dz) {
     var new_position = this.current_piece.new_position(dx, dy, dz);
     if (this.playfield.position_ok(this.current_piece, new_position)) {
         this.current_piece.hide();
-        this.current_piece.set_position(new_position);
+        this.current_piece.position = new_position;
         this.current_piece.show();
         this.screen.flush();
         return true;
