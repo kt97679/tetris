@@ -30,11 +30,11 @@ var PLAYFIELD_W = 10,
 
 function TetrisScreen() {
     this.s = "";
-    this.no_color = false;
+    this.use_color = true;
 }
 
 TetrisScreen.prototype.toggle_color = function() {
-    this.no_color ^= true;
+    this.use_color ^= true;
 }
 
 TetrisScreen.prototype.print = function(s) {
@@ -81,17 +81,15 @@ TetrisScreen.prototype.xyprint = function(x, y, s) {
 }
 
 TetrisScreen.prototype.set_fg = function (c) {
-    if (this.no_color) {
-        return;
+    if (this.use_color) {
+        this.s += ("\u001B[3" + TetrisScreen.color[c] + "m");
     }
-    this.s += ("\u001B[3" + TetrisScreen.color[c] + "m");
 }
 
 TetrisScreen.prototype.set_bg = function (c) {
-    if (this.no_color) {
-        return;
+    if (this.use_color) {
+        this.s += ("\u001B[4" + TetrisScreen.color[c] + "m");
     }
-    this.s += ("\u001B[4" + TetrisScreen.color[c] + "m");
 }
 
 TetrisScreen.prototype.get_random_color = function() {
@@ -142,11 +140,12 @@ TetrisPlayField.prototype.show = function() {
 TetrisPlayField.prototype.position_ok = function(piece) {
     var cells = piece.get_cells();
     for (var i = 0; i < cells.length; i++) {
-        var cell = cells[i];
-        if (cell[0] < 0 || cell[0] >= PLAYFIELD_W || cell[1] < 0 || cell[1] >= PLAYFIELD_H) {
+        var x = cells[i].x;
+        var y = cells[i].y;
+        if (x < 0 || x >= PLAYFIELD_W || y < 0 || y >= PLAYFIELD_H) {
             return false;
         }
-        if (this.cells[cell[1]][cell[0]] != undefined) {
+        if (this.cells[y][x] != undefined) {
             return false;
         }
     }
@@ -155,7 +154,7 @@ TetrisPlayField.prototype.position_ok = function(piece) {
 
 TetrisPlayField.prototype.flatten_piece = function(piece) {
     piece.get_cells().forEach(function(cell) {
-        this.cells[cell[1]][cell[0]] = piece.color;
+        this.cells[cell.y][cell.x] = piece.color;
     }, this);
 }
 
@@ -294,7 +293,7 @@ TetrisPiece.prototype.get_cells = function() {
     var data = this.piece_data[this.piece_index][this.z];
     data.split('').forEach(function(c, i) {
         var n = parseInt(c, 16);
-        result[i] = [this.x + (n & 3), this.y + ((n >> 2) & 3)];
+        result[i] = {x: this.x + (n & 3), y: this.y + ((n >> 2) & 3)};
     }, this);
     return result;
 }
@@ -305,7 +304,7 @@ TetrisPiece.prototype.draw = function(visible) {
         this.screen.set_bg(this.color);
     }
     this.get_cells().forEach(function(cell) {
-        this.screen.xyprint(this.origin_x + cell[0] * 2, this.origin_y + cell[1], visible ? FILLED_CELL : this.empty_cell);
+        this.screen.xyprint(this.origin_x + cell.x * 2, this.origin_y + cell.y, visible ? FILLED_CELL : this.empty_cell);
     }, this);
     this.screen.reset_colors();
     this.screen.flush();
