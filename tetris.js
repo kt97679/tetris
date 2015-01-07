@@ -137,8 +137,8 @@ TetrisPlayField.prototype.show = function() {
     }
 }
 
-TetrisPlayField.prototype.position_ok = function(piece) {
-    var cells = piece.get_cells();
+TetrisPlayField.prototype.position_ok = function(piece, position) {
+    var cells = piece.get_cells(position);
     for (var i = 0; i < cells.length; i++) {
         var x = cells[i].x;
         var y = cells[i].y;
@@ -282,18 +282,21 @@ function TetrisPiece(screen) {
     this.color = this.screen.get_random_color();
     this.piece_index = Math.floor(Math.random() * this.piece_data.length);
     this.symmetry = this.piece_data[this.piece_index].length;
-    this.x = 0;
-    this.y = 0;
-    this.z = Math.floor(Math.random() * this.symmetry);
+    this.position = {
+        x: 0,
+        y: 0,
+        z: Math.floor(Math.random() * this.symmetry)
+    }
     this.empty_cell = NEXT_EMPTY_CELL;
 }
 
-TetrisPiece.prototype.get_cells = function() {
+TetrisPiece.prototype.get_cells = function(new_position) {
     var result = [];
-    var data = this.piece_data[this.piece_index][this.z];
+    var p = new_position ? new_position : this.position;
+    var data = this.piece_data[this.piece_index][p.z];
     data.split('').forEach(function(c, i) {
         var n = parseInt(c, 16);
-        result[i] = {x: this.x + (n & 3), y: this.y + ((n >> 2) & 3)};
+        result[i] = {x: p.x + (n & 3), y: p.y + ((n >> 2) & 3)};
     }, this);
     return result;
 }
@@ -304,35 +307,22 @@ TetrisPiece.prototype.draw = function(visible) {
         this.screen.set_bg(this.color);
     }
     this.get_cells().forEach(function(cell) {
-        this.screen.xyprint(this.origin_x + cell.x * 2, this.origin_y + cell.y, visible ? FILLED_CELL : this.empty_cell);
+        this.screen.xyprint(this.origin.x + cell.x * 2, this.origin.y + cell.y, visible ? FILLED_CELL : this.empty_cell);
     }, this);
     this.screen.reset_colors();
     this.screen.flush();
 }
 
-TetrisPiece.prototype.set_origin = function(x, y) {
-    this.origin_x = x;
-    this.origin_y = y;
+TetrisPiece.prototype.new_position = function(dx, dy, dz) {
+    return {
+        x: this.position.x + dx,
+        y: this.position.y + dy,
+        z: (this.position.z + dz) % this.symmetry
+    }
 }
 
-TetrisPiece.prototype.set_xy = function(x, y) {
-    this.x = x;
-    this.y = y;
-}
-
-TetrisPiece.prototype.move = function(dx, dy, dz) {
-    this._x = this.x;
-    this._y = this.y;
-    this._z = this.z;
-    this.x += dx;
-    this.y += dy;
-    this.z = (this.z + dz) % this.symmetry;
-}
-
-TetrisPiece.prototype.unmove = function() {
-    this.x = this._x;
-    this.y = this._y;
-    this.z = this._z;
+TetrisPiece.prototype.set_position = function(p) {
+    this.position = p;
 }
 
 function TetrisController(tetris_input_processor) {
@@ -349,7 +339,7 @@ function TetrisController(tetris_input_processor) {
 
 TetrisController.prototype.get_next_piece = function() {
     this.next_piece = new TetrisPiece(this.screen);
-    this.next_piece.set_origin(NEXT_X, NEXT_Y);
+    this.next_piece.origin = {x: NEXT_X, y: NEXT_Y};
     this.next_piece.set_visible(this.next_piece_visible);
     this.next_piece.show();
 }
@@ -357,13 +347,13 @@ TetrisController.prototype.get_next_piece = function() {
 TetrisController.prototype.get_current_piece = function() {
     this.next_piece.hide();
     this.current_piece = this.next_piece;
-    this.current_piece.set_xy((PLAYFIELD_W - 4) / 2, 0);
+    this.current_piece.set_position({x: (PLAYFIELD_W - 4) / 2, y: 0, z: this.current_piece.position.z});
     if (! this.playfield.position_ok(this.current_piece)) {
         this.quit();
     }
     this.current_piece.set_visible(true);
     this.current_piece.empty_cell = PLAYFIELD_EMPTY_CELL;
-    this.current_piece.set_origin(PLAYFIELD_X, PLAYFIELD_Y);
+    this.current_piece.origin = {x: PLAYFIELD_X, y: PLAYFIELD_Y};
     this.current_piece.show();
     this.get_next_piece();
 }
@@ -416,12 +406,10 @@ TetrisController.prototype.process_fallen_piece = function() {
 }
 
 TetrisController.prototype.move = function(dx, dy, dz) {
-    this.current_piece.move(dx, dy, dz);
-    var new_position_ok = this.playfield.position_ok(this.current_piece);
-    this.current_piece.unmove();
-    if (new_position_ok) {
+    var new_position = this.current_piece.new_position(dx, dy, dz);
+    if (this.playfield.position_ok(this.current_piece, new_position)) {
         this.current_piece.hide();
-        this.current_piece.move(dx, dy, dz);
+        this.current_piece.set_position(new_position);
         this.current_piece.show();
         this.screen.flush();
         return true;
