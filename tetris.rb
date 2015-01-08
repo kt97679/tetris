@@ -377,11 +377,7 @@ class TetrisController
             @current_piece.show()
             return true
         end
-        if dy == 0
-            return true
-        end
-        process_fallen_piece()
-        return false
+        dy == 0
     end
 
     def cmd_right
@@ -398,6 +394,7 @@ class TetrisController
 
     def cmd_down
         return true if move(0, 1, 0)
+        process_fallen_piece()
         get_current_piece()
         return false
     end

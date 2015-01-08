@@ -177,10 +177,7 @@ int move(tetris_piece_s *piece, int *playfield, int dx, int dy, int dz) {
         draw_piece(*piece, 1);
         return 1;
     }
-    if (dy == 0) {
-        return 1;
-    }
-    return 0;
+    return (dy == 0);
 }
 
 void flatten_piece(tetris_piece_s *piece, int *playfield) {

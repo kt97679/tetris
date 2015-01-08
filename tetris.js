@@ -250,7 +250,6 @@ TetrisScore.prototype.show = function() {
     this.screen.xyprint(SCORE_X, SCORE_Y + 1, "Level:           " + this.level);
     this.screen.xyprint(SCORE_X, SCORE_Y + 2, "Score:           " + this.score);
     this.screen.reset_colors();
-    this.screen.flush();
 }
 
 TetrisPiece.prototype = new TetrisScreenItem();
@@ -285,7 +284,7 @@ function TetrisPiece(screen) {
 
 TetrisPiece.prototype.get_cells = function(new_position) {
     var result = [];
-    var p = new_position ? new_position : this.position;
+    var p = new_position || this.position;
     var data = this.piece_data[this.piece_index][p.z];
     data.split('').forEach(function(c, i) {
         var n = parseInt(c, 16);
@@ -303,7 +302,6 @@ TetrisPiece.prototype.draw = function(visible) {
         this.screen.xyprint(this.origin.x + cell.x * 2, this.origin.y + cell.y, visible ? FILLED_CELL : this.empty_cell);
     }, this);
     this.screen.reset_colors();
-    this.screen.flush();
 }
 
 TetrisPiece.prototype.new_position = function(dx, dy, dz) {
@@ -324,6 +322,7 @@ function TetrisController(tetris_input_processor) {
     this.get_next_piece();
     this.get_current_piece();
     this.redraw_screen();
+    this.screen.flush();
 }
 
 TetrisController.prototype.get_next_piece = function() {
@@ -354,7 +353,6 @@ TetrisController.prototype.redraw_screen = function() {
     [this.playfield, this.help, this.score, this.next_piece, this.current_piece].forEach(function(o) {
         o.show();
     });
-    this.screen.flush();
 }
 
 TetrisController.prototype.process_key = function(key) {
@@ -372,7 +370,10 @@ TetrisController.prototype.process_key = function(key) {
         'n': "toggle_next",
         'c': "toggle_color"
     };
-    commands[key] && this[commands[key]]();
+    if (commands[key]) {
+        this[commands[key]]();
+        this.screen.flush();
+    }
 }
 
 TetrisController.prototype.quit = function() {
@@ -400,21 +401,18 @@ TetrisController.prototype.move = function(dx, dy, dz) {
         this.current_piece.hide();
         this.current_piece.position = new_position;
         this.current_piece.show();
-        this.screen.flush();
         return true;
     }
-    if (dy == 0) {
-        return true;
-    }
-    this.process_fallen_piece();
-    this.screen.flush();
-    return false;
+    return (dy == 0);
 }
 
 TetrisController.prototype.cmd_down = function() {
-    if (this.move(0, 1, 0)) {
+    var landed = this.move(0, 1, 0);
+    this.screen.flush();
+    if (landed) {
         return true;
     }
+    this.process_fallen_piece();
     this.get_current_piece();
     return false;
 }
@@ -438,12 +436,10 @@ TetrisController.prototype.cmd_drop = function() {
 
 TetrisController.prototype.toggle_help = function() {
     this.help.toggle();
-    this.screen.flush();
 }
 
 TetrisController.prototype.toggle_next = function() {
     this.next_piece.toggle();
-    this.screen.flush();
 }
 
 TetrisController.prototype.toggle_color = function() {

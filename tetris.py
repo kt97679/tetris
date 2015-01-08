@@ -330,10 +330,7 @@ class TetrisController:
             self.current_piece.position = position
             self.current_piece.show()
             return True
-        if dy == 0:
-            return True
-        self.process_fallen_piece()
-        return False
+        return (dy == 0)
 
     def cmd_right(self):
         self.move(1, 0, 0)
@@ -347,6 +344,7 @@ class TetrisController:
     def cmd_down(self):
         if self.move(0, 1, 0):
             return True
+        self.process_fallen_piece()
         self.get_current_piece()
         return False
 
