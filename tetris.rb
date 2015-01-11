@@ -234,13 +234,13 @@ class TetrisPiece < TetrisScreenItem
     # 89ab
     # cdef
     @@piece_data = [
-        [0x1256], # square
-        [0x159d, 0x4567], # line
-        [0x4512, 0x0459], # s
-        [0x0156, 0x1548], # z
-        [0x159a, 0x8456, 0x0159, 0x2654], # l
-        [0x1598, 0x0456, 0x2159, 0xa654], # inverted l
-        [0x1456, 0x1596, 0x4569, 0x4159]  # t
+        %w(1256), # square
+        %w(159d 4567), # line
+        %w(4512 0459), # s
+        %w(0156 1548), # z
+        %w(159a 8456 0159 2654), # l
+        %w(1598 0456 2159 a654), # inverted l
+        %w(1456 1596 4569 4159)  # t
     ]
 
     def initialize(screen, origin, visible)
@@ -257,7 +257,7 @@ class TetrisPiece < TetrisScreenItem
     def get_cells(new_position = nil)
         x, y, z = new_position || @position
         data = @data[z]
-        (0..3).map {|i| data >> (4 * i)}.inject([]) {|c, i| c << [x + (i & 3), y + ((i >> 2) & 3)]}
+        data.split('').map {|c| i = c.hex; [x + (i & 3), y + ((i >> 2) & 3)]}
     end
 
     def draw(visible)
@@ -274,7 +274,7 @@ class TetrisPiece < TetrisScreenItem
 
     def new_position(dx, dy, dz)
         x, y, z = @position
-        return x + dx, y + dy, (z + dz) % @symmetry
+        [x + dx, y + dy, (z + dz) % @symmetry]
     end
 end
 
@@ -392,7 +392,7 @@ class TetrisController
         return true if move(0, 1, 0)
         process_fallen_piece()
         get_current_piece()
-        return false
+        false
     end
 
     def cmd_drop
@@ -415,7 +415,6 @@ class TetrisController
     end
 
     def process(cmd)
-        return if cmd == nil
         send(cmd)
         @screen.flush()
     end
@@ -469,7 +468,7 @@ class TetrisInputProcessor
                         cmd = @commands[key[0].downcase()]
                     end
                 end
-                @controller.process(cmd)
+                @controller.process(cmd) if cmd
             end
         ensure
             STDIN.echo = true
