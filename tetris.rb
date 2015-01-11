@@ -456,12 +456,11 @@ class TetrisInputProcessor
                 now = Time.now.to_f
                 select_timeout = @@move_down_delay - (now - last_move_down_time)
                 if select_timeout < 0
-                    @controller.process(:cmd_down)
                     last_move_down_time = now
                     select_timeout = @@move_down_delay
                 end
                 a = select([STDIN], [], [], select_timeout)
-                cmd = nil
+                cmd = :cmd_down
                 if a
                     key.unshift(a[0][0].getc()).pop
                     if key[1..2] == ["[", "\e"]
