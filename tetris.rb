@@ -450,7 +450,7 @@ class TetrisInputProcessor
         begin
             STDIN.echo = false
             STDIN.raw!
-            key = []
+            key = %w(x x x)
             last_move_down_time = Time.now.to_f
             while @controller.running
                 now = Time.now.to_f
@@ -463,10 +463,8 @@ class TetrisInputProcessor
                 a = select([STDIN], [], [], select_timeout)
                 cmd = nil
                 if a
-                    key[2] = key[1]
-                    key[1] = key[0]
-                    key[0] = a[0][0].getc()
-                    if key[2] == "\e" && key[1] == "["
+                    key.unshift(a[0][0].getc()).pop
+                    if key[1..2] == ["[", "\e"]
                         cmd = @commands[key[0]]
                     else
                         cmd = @commands[key[0].downcase()]
