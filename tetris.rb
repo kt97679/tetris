@@ -226,7 +226,7 @@ class TetrisPlayField
 end
 
 class TetrisPiece < TetrisScreenItem
-    attr_accessor :empty_cell, :origin
+    attr_accessor :empty_cell, :origin, :position
     attr_reader :color
 
     # 0123
@@ -272,13 +272,9 @@ class TetrisPiece < TetrisScreenItem
         @screen.reset_colors()
     end
 
-    def set_position(p)
-        @position = p[0], p[1], p[2] || @position[2]
-    end
-
     def new_position(dx, dy, dz)
         x, y, z = @position
-        return x += dx, y += dy, (z + dz) % @symmetry
+        return x + dx, y + dy, (z + dz) % @symmetry
     end
 end
 
@@ -313,8 +309,8 @@ end
 class TetrisController
     attr_reader :running
 
-    def initialize(screen)
-        @screen = screen
+    def initialize
+        @screen = TetrisScreen.new
         @next_piece_visible = true
         @running = true
         @help = TetrisHelp.new(@screen)
@@ -329,7 +325,7 @@ class TetrisController
     def get_current_piece()
         @next_piece.hide()
         @current_piece = @next_piece
-        @current_piece.set_position([(PLAYFIELD_W - 4) / 2, 0])
+        @current_piece.position = [(PLAYFIELD_W - 4) / 2, 0, @current_piece.position[2]]
         if ! @play_field.position_ok?(@current_piece)
             process(:cmd_quit)
             return
@@ -373,7 +369,7 @@ class TetrisController
         new_position = @current_piece.new_position(dx, dy, dz)
         if @play_field.position_ok?(@current_piece, new_position)
             @current_piece.hide()
-            @current_piece.set_position(new_position)
+            @current_piece.position = new_position
             @current_piece.show()
             return true
         end
@@ -432,7 +428,7 @@ class TetrisInputProcessor
         @@move_down_delay *= DELAY_FACTOR
     end
 
-    def initialize(controller)
+    def initialize
         @commands = {
             "\u0003" => :cmd_quit,
             "q" => :cmd_quit,
@@ -447,7 +443,7 @@ class TetrisInputProcessor
             "n" => :toggle_next,
             "c" => :toggle_color
         }
-        @controller = controller
+        @controller = TetrisController.new
     end
 
     def run()
@@ -485,7 +481,4 @@ class TetrisInputProcessor
     end
 end
 
-ts = TetrisScreen.new
-tc = TetrisController.new(ts)
-tip = TetrisInputProcessor.new(tc)
-tip.run()
+TetrisInputProcessor.new.run
