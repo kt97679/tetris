@@ -142,7 +142,7 @@ void draw_piece(tetris_piece_s piece, int visible) {
     }
     for (i = 0; i < 4; i++) {
         x = cells[2 * i] * 2 + piece.origin_x;
-        y = cells[2 * i + 1] + piece.origin_y;;
+        y = cells[2 * i + 1] + piece.origin_y;
         xyprint(x, y, visible ? FILLED_CELL : piece.empty_cell);
     }
     if (visible) {
