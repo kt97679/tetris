@@ -133,25 +133,24 @@ set_bold() {
     puts "\033[1m"
 }
 
-# playfield is 1-dimensional array, data is stored as follows:
-# [ a11, a21, ... aX1, a12, a22, ... aX2, ... a1Y, a2Y, ... aXY]
-#   |<  1st line   >|  |<  2nd line   >|  ... |<  last line  >|
-# X is PLAYFIELD_W, Y is PLAYFIELD_H
-# each array element contains cell color value or -1 if cell is empty
+# playfield is an array, each row is represented by integer
+# each cell occupies 3 bits (empty if 0, other values encode color)
 redraw_playfield() {
-    local i y=0 color
+    local x y color
 
-    for ((i = 0; i < PLAYFIELD_H * PLAYFIELD_W; i++)) {
-        ((i % PLAYFIELD_W == 0)) && xyprint $PLAYFIELD_X $((PLAYFIELD_Y + y++)) ""
-        ((color = play_field[i]))
-        if ((color == -1)) ; then
-            puts "$empty_cell"
-        else
-            set_fg $color
-            set_bg $color
-            puts "$filled_cell"
-            reset_colors
-        fi
+    for ((y = 0; y < PLAYFIELD_H; y++)) {
+        xyprint $PLAYFIELD_X $((PLAYFIELD_Y + y)) ""
+        for ((x = 0; x < PLAYFIELD_W; x++)) {
+            ((color = ((play_field[y] >> (x * 3)) & 7)))
+            if ((color == 0)) ; then
+                puts "$empty_cell"
+            else
+                set_fg $color
+                set_bg $color
+                puts "$filled_cell"
+                reset_colors
+            fi
+        }
     }
 }
 
@@ -299,7 +298,7 @@ new_piece_location_ok() {
         ((y = (c >> 2) + y_test))
         ((x = (c & 3) + x_test))
         ((y < 0 || y >= PLAYFIELD_H || x < 0 || x >= PLAYFIELD_W )) && return 1 # check if we are out of the play field
-        ((${play_field[y * PLAYFIELD_W + x]} != -1 )) && return 1               # check if location is already ocupied
+        ((((play_field[y] >> (x * 3)) & 7) != 0 )) && return 1                  # check if location is already ocupied
     }
     return 0
 }
@@ -320,7 +319,7 @@ get_random_next() {
     # now let's get next piece
     ((next_piece = RANDOM % ${#piece_data[@]}))
     ((next_piece_rotation = RANDOM % (${#piece_data[$next_piece]} / 4)))
-    ((next_piece_color = RANDOM % ${#colors[@]}))
+    ((next_piece_color = colors[RANDOM % ${#colors[@]}]))
     show_next
 }
 
@@ -364,8 +363,8 @@ init() {
     local i
 
     # playfield is initialized with -1s (empty cells)
-    for ((i = 0; i < PLAYFIELD_H * PLAYFIELD_W; i++)) {
-        play_field[$i]=-1
+    for ((i = 0; i < PLAYFIELD_H; i++)) {
+        play_field[$i]=0
     }
 
     clear
@@ -410,30 +409,35 @@ reader() {
 
 # this function updates occupied cells in play_field array after piece is dropped
 flatten_playfield() {
-    local i c k x y
+    local i c x y
     for ((i = 0; i < 4; i++)) {
         c=0x${piece_data[$current_piece]:$((i + current_piece_rotation * 4)):1}
         ((y = (c >> 2) + current_piece_y))
         ((x = (c & 3) + current_piece_x))
-        ((k = y * PLAYFIELD_W + x))
-        play_field[$k]=$current_piece_color
+        ((play_field[y] |= (current_piece_color << (x * 3))))
     }
+}
+
+# this function takes row number as argument and checks if has empty cells
+line_full() {
+    local row=${play_field[$1]} x
+    for ((x = 0; x < PLAYFIELD_W; x++)) {
+        ((((row >> (x * 3)) & 7) == 0)) && return 1
+    }
+    return 0
 }
 
 # this function goes through play_field array and eliminates lines without empty sells
 process_complete_lines() {
-    local j i complete_lines
-    ((complete_lines = 0))
-    for ((j = 0; j < PLAYFIELD_W * PLAYFIELD_H; j += PLAYFIELD_W)) {
-        for ((i = j + PLAYFIELD_W - 1; i >= j; i--)) {
-            ((${play_field[$i]} == -1)) && break # empty cell found
+    local y complete_lines=0
+    for ((y = PLAYFIELD_H - 1; y > -1; y--)) {
+        line_full $y && {
+            unset play_field[$y]
+            ((complete_lines++))
         }
-        ((i >= j)) && continue # previous loop was interrupted because empty cell was found
-        ((complete_lines++))
-        for ((i = j - 1; i >= 0; i--)) {
-            play_field[$((i + PLAYFIELD_W))]=${play_field[$i]} # move line down
-            play_field[$i]=-1 # mark cells as free
-        }
+    }
+    for ((y = 0; y < complete_lines; y++)) {
+        play_field=(0 ${play_field[@]})
     }
     return $complete_lines
 }
