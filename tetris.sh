@@ -84,7 +84,7 @@ LEVEL_UP=20
 
 colors=($RED $GREEN $YELLOW $BLUE $FUCHSIA $CYAN $WHITE)
 
-no_color=-1      # -1 if we use color, 1 if not
+use_color=1      # 1 if we use color, 0 if not
 showtime=1       # controller runs while this flag is 1
 empty_cell=" ."  # how we draw empty cell
 filled_cell="[]" # how we draw filled cell
@@ -115,14 +115,12 @@ hide_cursor() {
 
 # foreground color
 set_fg() {
-    ((no_color == 1)) && return
-    puts "\033[3${1}m"
+    ((use_color)) && puts "\033[3${1}m"
 }
 
 # background color
 set_bg() {
-    ((no_color == 1)) && return
-    puts "\033[4${1}m"
+    ((use_color)) && puts "\033[4${1}m"
 }
 
 reset_colors() {
@@ -141,7 +139,7 @@ redraw_playfield() {
     for ((y = 0; y < PLAYFIELD_H; y++)) {
         xyprint $PLAYFIELD_X $((PLAYFIELD_Y + y)) ""
         for ((x = 0; x < PLAYFIELD_W; x++)) {
-            ((color = ((play_field[y] >> (x * 3)) & 7)))
+            ((color = ((playfield[y] >> (x * 3)) & 7)))
             if ((color == 0)) ; then
                 puts "$empty_cell"
             else
@@ -194,19 +192,19 @@ draw_help() {
     set_fg $HELP_COLOR
     for ((i = 0; i < ${#help[@]}; i++ )) {
         # ternary assignment: if help_on is 1 use string as is, otherwise substitute all characters with spaces
-        ((help_on == 1)) && s="${help[i]}" || s="${help[i]//?/ }"
+        ((help_on)) && s="${help[i]}" || s="${help[i]//?/ }"
         xyprint $HELP_X $((HELP_Y + i)) "$s"
     }
     reset_colors
 }
 
 toggle_help() {
-    ((help_on = -help_on))
+    ((help_on ^= 1))
     draw_help
 }
 
 # this array holds all possible pieces that can be used in the game
-# each piece consists of 4 cells numbered from 0x0 to 0xa:
+# each piece consists of 4 cells numbered from 0x0 to 0xf:
 # 0123
 # 4567
 # 89ab
@@ -247,27 +245,20 @@ next_piece_color=0
 next_on=1 # if this flag is 1 next piece is shown
 
 draw_next() {
-    # Arguments: 1 - string to draw single cell
-    ((next_on == -1)) && return
-    draw_piece $NEXT_X $NEXT_Y $next_piece $next_piece_rotation "$1"
-}
-
-clear_next() {
-    draw_next "${filled_cell//?/ }"
-}
-
-show_next() {
-    set_fg $next_piece_color
-    set_bg $next_piece_color
-    draw_next "${filled_cell}"
+    # Argument: 1 - visibility (0 - no, 1 - yes), if this argument is skipped $next_on is used
+    local s="$filled_cell" visible=${1:-$next_on}
+    ((visible)) && {
+        set_fg $next_piece_color
+        set_bg $next_piece_color
+    } || {
+        s="${s//?/ }"
+    }
+    draw_piece $NEXT_X $NEXT_Y $next_piece $next_piece_rotation "$s"
     reset_colors
 }
 
 toggle_next() {
-    case $next_on in
-        1) clear_next; next_on=-1 ;;
-        -1) next_on=1; show_next ;;
-    esac
+    draw_next $((next_on ^= 1))
 }
 
 draw_current() {
@@ -298,7 +289,7 @@ new_piece_location_ok() {
         ((y = (c >> 2) + y_test))
         ((x = (c & 3) + x_test))
         ((y < 0 || y >= PLAYFIELD_H || x < 0 || x >= PLAYFIELD_W )) && return 1 # check if we are out of the play field
-        ((((play_field[y] >> (x * 3)) & 7) != 0 )) && return 1                  # check if location is already ocupied
+        ((((playfield[y] >> (x * 3)) & 7) != 0 )) && return 1                  # check if location is already ocupied
     }
     return 0
 }
@@ -315,12 +306,12 @@ get_random_next() {
     new_piece_location_ok $current_piece_x $current_piece_y || cmd_quit
     show_current
 
-    clear_next
+    draw_next 0
     # now let's get next piece
     ((next_piece = RANDOM % ${#piece_data[@]}))
     ((next_piece_rotation = RANDOM % (${#piece_data[$next_piece]} / 4)))
     ((next_piece_color = colors[RANDOM % ${#colors[@]}]))
-    show_next
+    draw_next
 }
 
 draw_border() {
@@ -346,7 +337,7 @@ draw_border() {
 }
 
 redraw_screen() {
-    show_next
+    draw_next
     update_score 0
     draw_help
     draw_border
@@ -355,7 +346,7 @@ redraw_screen() {
 }
 
 toggle_color() {
-    ((no_color = -no_color))
+    ((use_color ^= 1))
     redraw_screen
 }
 
@@ -364,7 +355,7 @@ init() {
 
     # playfield is initialized with -1s (empty cells)
     for ((i = 0; i < PLAYFIELD_H; i++)) {
-        play_field[$i]=0
+        playfield[$i]=0
     }
 
     clear
@@ -407,37 +398,37 @@ reader() {
     done
 }
 
-# this function updates occupied cells in play_field array after piece is dropped
+# this function updates occupied cells in playfield array after piece is dropped
 flatten_playfield() {
     local i c x y
     for ((i = 0; i < 4; i++)) {
         c=0x${piece_data[$current_piece]:$((i + current_piece_rotation * 4)):1}
         ((y = (c >> 2) + current_piece_y))
         ((x = (c & 3) + current_piece_x))
-        ((play_field[y] |= (current_piece_color << (x * 3))))
+        ((playfield[y] |= (current_piece_color << (x * 3))))
     }
 }
 
 # this function takes row number as argument and checks if has empty cells
 line_full() {
-    local row=${play_field[$1]} x
+    local row=${playfield[$1]} x
     for ((x = 0; x < PLAYFIELD_W; x++)) {
         ((((row >> (x * 3)) & 7) == 0)) && return 1
     }
     return 0
 }
 
-# this function goes through play_field array and eliminates lines without empty sells
+# this function goes through playfield array and eliminates lines without empty sells
 process_complete_lines() {
     local y complete_lines=0
     for ((y = PLAYFIELD_H - 1; y > -1; y--)) {
         line_full $y && {
-            unset play_field[$y]
+            unset playfield[$y]
             ((complete_lines++))
         }
     }
     for ((y = 0; y < complete_lines; y++)) {
-        play_field=(0 ${play_field[@]})
+        playfield=(0 ${playfield[@]})
     }
     return $complete_lines
 }
