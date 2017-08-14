@@ -418,7 +418,7 @@ line_full() {
     return 0
 }
 
-# this function goes through playfield array and eliminates lines without empty sells
+# this function goes through playfield array and eliminates lines without empty cells
 process_complete_lines() {
     local y complete_lines=0
     for ((y = PLAYFIELD_H - 1; y > -1; y--)) {
