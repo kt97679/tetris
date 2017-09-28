@@ -93,7 +93,7 @@ class TetrisScreen:
         self.s += "\x1b[1m"
 
     def get_random_color(self):
-        k = self.color.keys()
+        k = list(self.color.keys())
         random.shuffle(k)
         return k[0]
 
@@ -224,7 +224,7 @@ class TetrisPiece(TetrisScreenItem):
     def get_cells(self, new_position=None):
         x, y, z = new_position or self.position
         data = self.data[z]
-        return [[x + ((data >> (i * 4)) & 3), y + ((data >> (i * 4 + 2)) & 3)] for i in range(0, 4)]
+        return [[int(x) + ((data >> (i * 4)) & 3), int(y) + ((data >> (i * 4 + 2)) & 3)] for i in range(0, 4)]
 
     def draw(self, visible):
         if visible:
