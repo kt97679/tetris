@@ -43,7 +43,7 @@ TOGGLE_NEXT=7
 TOGGLE_COLOR=8
 
 DELAY=1000          # initial delay between piece movements (milliseconds)
-DELAY_FACTOR="8/10" # this value controld delay decrease for each level up
+DELAY_FACTOR="8/10" # this value controls delay decrease for each level up
 
 # color codes
 RED=1
