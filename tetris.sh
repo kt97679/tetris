@@ -373,7 +373,7 @@ ticker() {
     # on SIGUSR1 delay should be decreased, this happens during level ups
     trap 'DELAY=$(($DELAY * $DELAY_FACTOR))' SIGUSR1
 
-    while true ; do echo -n $DOWN; sleep $((DELAY / 1000)).$((DELAY % 1000)); done
+    while true ; do echo -n $DOWN; sleep $((DELAY / 1000)).$(printf "%03d" $((DELAY % 1000))); done
 }
 
 # this function processes keyboard input
