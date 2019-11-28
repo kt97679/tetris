@@ -362,8 +362,6 @@ init() {
 # this function runs in separate process
 # it sends DOWN commands to controller with appropriate delay
 ticker() {
-    # on SIGUSR2 this process should exit
-    trap exit SIGUSR2
     # on SIGUSR1 delay should be decreased, this happens during level ups
     trap 'DELAY=$(($DELAY * $DELAY_FACTOR))' SIGUSR1
 
@@ -372,7 +370,6 @@ ticker() {
 
 # this function processes keyboard input
 reader() {
-    trap exit SIGUSR2 # this process exits on SIGUSR2
     local -u key a='' b='' cmd esc_ch=$'\x1b'
     # commands is associative array, which maps pressed keys to commands, sent to controller
     declare -A commands=([A]=$ROTATE [C]=$RIGHT [D]=$LEFT
@@ -489,7 +486,7 @@ cmd_drop() {
 
 cmd_quit() {
     showtime=-1                                  # let's stop controller ...
-    kill -SIGUSR2 $ticker_pid $reader_pid        # ... send SIGUSR2 to script instances to stop forked processes ...
+    kill $ticker_pid $reader_pid                 # ... kill forked processes ...
     xyprint $GAMEOVER_X $GAMEOVER_Y "Game over!"
     echo -e "$screen_buffer"                     # ... and print final message
 }
