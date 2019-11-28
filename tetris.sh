@@ -79,7 +79,6 @@ LEVEL_UP=20
 colors=($RED $GREEN $YELLOW $BLUE $FUCHSIA $CYAN $WHITE)
 
 use_color=1      # 1 if we use color, 0 if not
-showtime=1       # controller runs while this flag is 1
 empty_cell=" ."  # how we draw empty cell
 filled_cell="[]" # how we draw filled cell
 
@@ -297,7 +296,7 @@ get_random_next() {
     ((current_piece_x = (PLAYFIELD_W - 4) / 2))
     ((current_piece_y = 0))
     # check if piece can be placed at this location, if not - game over
-    new_piece_location_ok $current_piece_x $current_piece_y || cmd_quit
+    new_piece_location_ok $current_piece_x $current_piece_y || exit
     show_current
 
     draw_next 0
@@ -484,18 +483,20 @@ cmd_drop() {
     while move_piece $current_piece_x $((current_piece_y + 1)) ; do : ; done
 }
 
-cmd_quit() {
-    showtime=-1                                  # let's stop controller ...
-    kill $ticker_pid $reader_pid                 # ... kill forked processes ...
+at_exit() {
+    kill $ticker_pid $reader_pid                 # let's kill forked processes ...
     xyprint $GAMEOVER_X $GAMEOVER_Y "Game over!"
-    echo -e "$screen_buffer"                     # ... and print final message
+    echo -e "$screen_buffer"                     # ... print final message ...
+    show_cursor
+    stty -F /dev/tty $stty_g                     # ... and restore terminal state
 }
 
 controller() {
     local cmd commands
+    trap at_exit EXIT
 
     # initialization of commands array with appropriate functions
-    commands[$QUIT]=cmd_quit
+    commands[$QUIT]=exit
     commands[$RIGHT]=cmd_right
     commands[$LEFT]=cmd_left
     commands[$ROTATE]=cmd_rotate
@@ -507,7 +508,7 @@ controller() {
 
     init
 
-    while ((showtime == 1)) ; do  # run while showtime variable is 1, it is changed to -1 in cmd_quit function
+    while true ; do               # run forever
         echo -ne "$screen_buffer" # output screen buffer ...
         screen_buffer=""          # ... and reset it
         read -s -n 1 cmd          # read next command from stdout
@@ -526,7 +527,3 @@ stty_g=$(stty -g) # let's save terminal state
     read reader_pid ticker_pid
     controller
 )
-
-show_cursor
-stty $stty_g # let's restore terminal state
-
