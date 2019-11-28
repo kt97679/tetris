@@ -24,12 +24,6 @@
 
 set -u # non initialized variable is an error
 
-# 2 signals are used: SIGUSR1 to decrease delay after level up and SIGUSR2 to quit
-# they are sent to all instances of this script
-# because of that we should process them in each instance
-# in this instance we are ignoring both signals
-trap '' SIGUSR1 SIGUSR2
-
 # Those are commands sent to controller by key press processing code
 # In controller they are used as index to retrieve actual functuon from array
 QUIT=0
@@ -161,7 +155,7 @@ update_score() {
     ((score += ($1 * $1)))
     if (( score > LEVEL_UP * level)) ; then          # if level should be increased
         ((level++))                                  # increment level
-        pkill -SIGUSR1 -f "/bin/bash $0" # and send SIGUSR1 signal to all instances of this script (please see ticker for more details)
+        kill -SIGUSR1 $ticker_pid # and send SIGUSR1 signal to ticker process (please see ticker() function for more details)
     fi
     set_bold
     set_fg $SCORE_COLOR
@@ -379,7 +373,6 @@ ticker() {
 # this function processes keyboard input
 reader() {
     trap exit SIGUSR2 # this process exits on SIGUSR2
-    trap '' SIGUSR1   # SIGUSR1 is ignored
     local -u key a='' b='' cmd esc_ch=$'\x1b'
     # commands is associative array, which maps pressed keys to commands, sent to controller
     declare -A commands=([A]=$ROTATE [C]=$RIGHT [D]=$LEFT
@@ -496,14 +489,12 @@ cmd_drop() {
 
 cmd_quit() {
     showtime=-1                                  # let's stop controller ...
-    pkill -SIGUSR2 -f "/bin/bash $0" # ... send SIGUSR2 to all script instances to stop forked processes ...
+    kill -SIGUSR2 $ticker_pid $reader_pid        # ... send SIGUSR2 to script instances to stop forked processes ...
     xyprint $GAMEOVER_X $GAMEOVER_Y "Game over!"
     echo -e "$screen_buffer"                     # ... and print final message
 }
 
 controller() {
-    # SIGUSR1 and SIGUSR2 are ignored
-    trap '' SIGUSR1 SIGUSR2
     local cmd commands
 
     # initialization of commands array with appropriate functions
@@ -532,8 +523,10 @@ stty_g=$(stty -g) # let's save terminal state
 # output of ticker and reader is joined and piped into controller
 (
     ticker & # ticker runs as separate process
+    echo $BASHPID $!
     reader
 )|(
+    read reader_pid ticker_pid
     controller
 )
 
