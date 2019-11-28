@@ -484,11 +484,10 @@ cmd_drop() {
 }
 
 at_exit() {
-    kill $ticker_pid $reader_pid                 # let's kill forked processes ...
+    kill $ticker_pid $reader_pid                 # let's kill ticker and reader ...
     xyprint $GAMEOVER_X $GAMEOVER_Y "Game over!"
-    echo -e "$screen_buffer"                     # ... print final message ...
+    echo -e "$screen_buffer"                     # ... and print final message
     show_cursor
-    stty -F /dev/tty $stty_g                     # ... and restore terminal state
 }
 
 controller() {
@@ -506,6 +505,7 @@ controller() {
     commands[$TOGGLE_NEXT]=toggle_next
     commands[$TOGGLE_COLOR]=toggle_color
 
+    read reader_pid ticker_pid
     init
 
     while true ; do               # run forever
@@ -516,14 +516,11 @@ controller() {
     done
 }
 
-stty_g=$(stty -g) # let's save terminal state
-
+stty_g=$(stty -g)              # let's save terminal state ...
+trap 'stty $stty_g; exit' TERM # ... and restore it on exit
 # output of ticker and reader is joined and piped into controller
-(
-    ticker & # ticker runs as separate process
-    echo $BASHPID $!
-    reader
-)|(
-    read reader_pid ticker_pid
-    controller
-)
+exec &> >(controller)
+
+ticker & # ticker runs as separate process
+echo $BASHPID $!
+reader
