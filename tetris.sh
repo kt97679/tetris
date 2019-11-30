@@ -101,33 +101,33 @@ flush_screen() {
 # move cursor to (x,y) and print string
 # (1,1) is upper left corner of the screen
 xyprint() {
-    puts "\033[${2};${1}H${3}"
+    puts "\e[${2};${1}H${3}"
 }
 
 show_cursor() {
-    echo -ne "\033[?25h"
+    echo -ne "\e[?25h"
 }
 
 hide_cursor() {
-    echo -ne "\033[?25l"
+    echo -ne "\e[?25l"
 }
 
 # foreground color
 set_fg() {
-    ((use_color)) && puts "\033[3${1}m"
+    ((use_color)) && puts "\e[3${1}m"
 }
 
 # background color
 set_bg() {
-    ((use_color)) && puts "\033[4${1}m"
+    ((use_color)) && puts "\e[4${1}m"
 }
 
 reset_colors() {
-    puts "\033[0m"
+    puts "\e[0m"
 }
 
 set_bold() {
-    puts "\033[1m"
+    puts "\e[1m"
 }
 
 # playfield is an array, each row is represented by integer
