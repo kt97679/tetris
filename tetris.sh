@@ -88,8 +88,14 @@ lines_completed=0 # completed lines counter initialization
 
 # screen_buffer is variable, that accumulates all screen changes
 # this variable is printed in controller once per game cycle
+screen_buffer=""
 puts() {
     screen_buffer+=${1}
+}
+
+flush_screen() {
+    echo -ne "$screen_buffer"
+    screen_buffer=""
 }
 
 # move cursor to (x,y) and print string
@@ -356,35 +362,7 @@ init() {
     get_random_next
     get_random_next
     redraw_screen
-}
-
-# this function runs in separate process
-# it sends DOWN commands to controller with appropriate delay
-ticker() {
-    # on SIGUSR1 delay should be decreased, this happens during level ups
-    trap 'DELAY=$(($DELAY * $DELAY_FACTOR))' SIGUSR1
-
-    while true ; do echo -n $DOWN; sleep $((DELAY / 1000)).$(printf "%03d" $((DELAY % 1000))); done
-}
-
-# this function processes keyboard input
-reader() {
-    local -u key a='' b='' cmd esc_ch=$'\x1b'
-    # commands is associative array, which maps pressed keys to commands, sent to controller
-    declare -A commands=([A]=$ROTATE [C]=$RIGHT [D]=$LEFT
-        [_S]=$ROTATE [_A]=$LEFT [_D]=$RIGHT
-        [_]=$DROP [_Q]=$QUIT [_H]=$TOGGLE_HELP [_N]=$TOGGLE_NEXT [_C]=$TOGGLE_COLOR)
-
-    while read -s -n 1 key ; do
-        case "$a$b$key" in
-            "${esc_ch}["[ACD]) cmd=${commands[$key]} ;; # cursor key
-            *${esc_ch}${esc_ch}) cmd=$QUIT ;;           # exit on 2 escapes
-            *) cmd=${commands[_$key]:-} ;;              # regular key. If space was pressed $key is empty
-        esac
-        a=$b   # preserve previous keys
-        b=$key
-        [ -n "$cmd" ] && echo -n "$cmd"
-    done
+    flush_screen
 }
 
 # this function updates occupied cells in playfield array after piece is dropped
@@ -483,44 +461,64 @@ cmd_drop() {
     while move_piece $current_piece_x $((current_piece_y + 1)) ; do : ; done
 }
 
+stty_g=$(stty -g)              # let's save terminal state ...
+
 at_exit() {
-    kill $ticker_pid $reader_pid                 # let's kill ticker and reader ...
+    kill $ticker_pid                             # let's kill ticker process ...
     xyprint $GAMEOVER_X $GAMEOVER_Y "Game over!"
-    echo -e "$screen_buffer"                     # ... and print final message
+    echo -e "$screen_buffer"                     # ... print final message ...
     show_cursor
+    stty $stty_g                                 # ... and restore terminal state
 }
 
-controller() {
-    local cmd commands
+# this function runs in separate process
+# it sends SIGUSR1 signals to the main process with appropriate delay
+ticker() {
+    # on SIGUSR1 delay should be decreased, this happens during level ups
+    trap 'DELAY=$(($DELAY * $DELAY_FACTOR))' SIGUSR1
+    trap exit TERM
+
+    while sleep $((DELAY / 1000)).$(printf "%03d" $((DELAY % 1000))); do kill -SIGUSR1 $1; done
+}
+
+do_tick() {
+    $tick_blocked && tick_scheduled=true && return
+    cmd_down
+    flush_screen
+}
+
+main() {
+    local -u key a='' b='' esc_ch=$'\x1b'
+    local cmd
+    # commands is associative array, which maps pressed keys to commands, sent to controller
+    local -A commands=([A]=cmd_rotate [C]=cmd_right [D]=cmd_left
+        [_S]=cmd_rotate [_A]=cmd_left [_D]=cmd_right
+        [_]=cmd_drop [_Q]=exit [_H]=toggle_help [_N]=toggle_next [_C]=toggle_color)
+
     trap at_exit EXIT
-
-    # initialization of commands array with appropriate functions
-    commands[$QUIT]=exit
-    commands[$RIGHT]=cmd_right
-    commands[$LEFT]=cmd_left
-    commands[$ROTATE]=cmd_rotate
-    commands[$DOWN]=cmd_down
-    commands[$DROP]=cmd_drop
-    commands[$TOGGLE_HELP]=toggle_help
-    commands[$TOGGLE_NEXT]=toggle_next
-    commands[$TOGGLE_COLOR]=toggle_color
-
-    read reader_pid ticker_pid
+    trap do_tick SIGUSR1
     init
+    ticker $$ &
+    ticker_pid=$!
+    tick_blocked=false
+    tick_scheduled=false
 
-    while true ; do               # run forever
-        echo -ne "$screen_buffer" # output screen buffer ...
-        screen_buffer=""          # ... and reset it
-        read -s -n 1 cmd          # read next command from stdout
-        ${commands[$cmd]}         # run command
+    while read -s -n 1 key ; do
+        case "$a$b$key" in
+            "${esc_ch}["[ACD]) cmd=${commands[$key]} ;; # cursor key
+            *${esc_ch}${esc_ch}) cmd=exit ;;            # exit on 2 escapes
+            *) cmd=${commands[_$key]:-} ;;              # regular key. If space was pressed $key is empty
+        esac
+        a=$b   # preserve previous keys
+        b=$key
+        [ -n "$cmd" ] && {
+            tick_blocked=true
+            $cmd
+            tick_blocked=false
+            $tick_scheduled && tick_scheduled=false && do_tick
+            flush_screen
+        }
     done
 }
 
-stty_g=$(stty -g)              # let's save terminal state ...
-trap 'stty $stty_g; exit' TERM # ... and restore it on exit
-# output of ticker and reader is joined and piped into controller
-exec &> >(controller)
-
-ticker & # ticker runs as separate process
-echo $BASHPID $!
-reader
+main
