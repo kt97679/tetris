@@ -478,7 +478,7 @@ ticker() {
     trap 'DELAY=$(($DELAY * $DELAY_FACTOR))' SIGUSR1
     trap exit TERM
 
-    while sleep $((DELAY / 1000)).$(printf "%03d" $((DELAY % 1000))); do kill -SIGUSR1 $1; done
+    while sleep $((DELAY / 1000)).$(printf "%03d" $((DELAY % 1000))); do kill -SIGUSR1 $1; done 2>/dev/null
 }
 
 do_tick() {
