@@ -26,21 +26,22 @@
 
 set -u # non initialized variable is an error
 
+# print language for showing usable languages
+print_languages() {
+    if [ ! -d "lang/" ]; then                                   # check if lang/ exist
+        echo "language(s) does not loaded, please check lang/ directory.";
+    else
+        if [ -z "$(ls lang/ 2> /dev/null)" ]; then              # check if lang/ empty
+            echo "language files not found, please insert those.";
+        fi
+    fi        
+    ls -I README.md -1t lang/ 2> /dev/null | cut -d'.' -f1;     # print languages
+}
+
 # show usage when given -h argument
 usage() {
-    print_languages() {
-        if [ ! -d "lang/" ]; then                                  # check if lang/ exist
-            echo "language(s) does not loaded, please check lang/ directory.";
-        else
-            if [ -z "$(ls lang/ 2> /dev/null)" ]; then             # check if lang/ empty
-                echo "language files not found, please insert those."
-            fi
-        fi        
-        ls -I README.md -1t lang/ 2> /dev/null | cut -d'.' -f1;     # print languages
-    }
-
-    printf "%s\n" \                                                 # prin main usage
-        "Usage: $0 [-h] [-l language]" \
+    printf "%s\n" \
+        "usage: $0 [-h] [-l language]" \
         "supported languages:" \
         "english (it is defualt, option not required)" \
         "$(print_languages)"
@@ -69,7 +70,14 @@ while getopts ":l:h" opt; do
     l )
         langChocie=${OPTARG};
         if [ "$langChocie" != "english" ]; then       # check if user give english
-              . lang/$langChocie.sh &> /dev/null      # when use give english files are not loaded
+            if [ ! -f "lang/$langChocie.sh" ]; then   # abort script if wrong value is given 
+                echo "$langChocie language not found, aborting.";
+                echo -e "usable languages:\nenglish (default)"
+                print_languages;
+                exit 0;
+            else
+            . lang/$langChocie.sh &> /dev/null        # when use give english files are not loaded
+            fi
         fi
     ;;
     h )
