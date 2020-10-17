@@ -26,15 +26,26 @@
 
 set -u # non initialized variable is an error
 
-# show help page when given -h argument
-function help_page() {
-cat <<EOF
-usage: ./`basename $0` -l <language>
-supported languages:
-english (it is defualt, option not required)
-$(ls -I README.md -1t lang/ | cut -d'.' -f1)    
-EOF
-exit 0;
+# show usage when given -h argument
+
+usage() {
+    print_languages() {
+        if [ ! -d "lang/" ]; then
+            echo "language(s) does not loaded, please check lang/ directory.";
+        else
+            if [ -z "$(ls lang/ 2> /dev/null)" ]; then
+                echo "language files not found, please insert those."
+            fi
+        fi        
+        ls -I README.md -1t lang/ 2> /dev/null | cut -d'.' -f1;
+    }
+
+    printf "%s\n" \
+        "Usage: $0 [-h] [-l language]" \
+        "supported languages:" \
+        "english (it is defualt, option not required)" \
+        "$(print_languages)"
+    exit 0;
 }
 
 # BEGIN OF LANGUAGE LINES
@@ -61,7 +72,7 @@ while getopts ":l:h" opt; do
         . lang/$langChocie.sh &> /dev/null
     ;;
     h )
-        help_page;
+        usage;
     ;;
     : )
         echo "Missing option argument for -$OPTARG" # if value of -l not given
