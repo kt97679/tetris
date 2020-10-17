@@ -1,6 +1,6 @@
 #!/bin/bash
 
-local_LinesComplated="Zeilen abgeschlossen: ";
+local_LinesCompleted="Zeilen abgeschlossen: ";
 local_Level="Niveau:               ";
 local_Score="Ergebnis:             ";
 local_UseCursorKeys="Verwenden Sie die Cursortasten";

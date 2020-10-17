@@ -1,7 +1,7 @@
 #!/bin/bash
 # russian keyboard layout not supported.
 
-local_LinesComplated="ПОЛНЫХ СТРОК: ";
+local_LinesCompleted="ПОЛНЫХ СТРОК: ";
 local_Level="УРОВЕНЬ:      ";
 local_Score="СЧЕТ:         ";
 local_UseCursorKeys="ИСПОЛЬЗУЙТЕ КЛАВИШИ КУРСОРА";

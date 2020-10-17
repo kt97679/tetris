@@ -1,6 +1,6 @@
 #!/bin/bash
 
-local_LinesComplated="Tamamlanan satırlar: ";
+local_LinesCompleted="Tamamlanan satırlar: ";
 local_Level="Seviye:              ";
 local_Score="Skor:                ";
 local_UseCursorKeys="  Ok tuşlarını kullan";

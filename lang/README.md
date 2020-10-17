@@ -13,7 +13,7 @@ Tetris script will automatically identify the local variables you added.
 
 EXAMPLE `language_you_added.sh` file:
 ```bash
-local_LinesComplated="Lines completed: ";
+local_LinesCompleted="Lines completed: ";
 local_Level="Level:           ";
 local_Score="Score:           ";
 local_UseCursorKeys="  Use cursor keys";

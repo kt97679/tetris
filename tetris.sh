@@ -51,7 +51,7 @@ usage() {
 # BEGIN OF LANGUAGE LINES
 # if you want see or add other languages, visit lang/ dir and read lang/README.md
 # default localized values english:
-local_LinesComplated="Lines completed: ";
+local_LinesCompleted="Lines completed: ";
 local_Level="Level:           ";
 local_Score="Score:           ";
 local_UseCursorKeys="  Use cursor keys";
@@ -232,7 +232,7 @@ update_score() {
     fi
     set_bold
     set_fg $SCORE_COLOR
-    xyprint $SCORE_X $SCORE_Y         "$local_LinesComplated$lines_completed"
+    xyprint $SCORE_X $SCORE_Y         "$local_LinesCompleted$lines_completed"
     xyprint $SCORE_X $((SCORE_Y + 1)) "$local_Level$level"
     xyprint $SCORE_X $((SCORE_Y + 2)) "$local_Score$score"
     reset_colors

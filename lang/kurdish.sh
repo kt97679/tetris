@@ -1,6 +1,6 @@
 #!/bin/bash
 
-local_LinesComplated="Rêzên qediyayî: ";
+local_LinesCompleted="Rêzên qediyayî: ";
 local_Level="Ast:            ";
 local_Score="Pûan:           ";
 local_UseCursorKeys="  Bişkokên tîrêjan bi kar bîne";
