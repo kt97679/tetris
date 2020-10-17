@@ -17,7 +17,7 @@
 #
 # Author: Kirill Timofeev <kt97679@gmail.com>
 #
-# Localized Support: Rojen Zaman <rojen@riseup.net> | $script_dir/lang/README.md
+# Localized Support: Rojen Zaman <rojen@riseup.net> | lang/README.md
 #
 # This program is free software. It comes without any warranty, to the extent
 # permitted by applicable law. You can redistribute it and/or modify it under
