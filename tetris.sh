@@ -68,15 +68,15 @@ local_GameOver="Game over!";
 while getopts ":l:h" opt; do
   case ${opt} in
     l )
-        langChocie=${OPTARG};
-        if [ "$langChocie" != "english" ]; then       # check if user give english
-            if [ ! -f "lang/$langChocie.sh" ]; then   # abort script if wrong value is given 
-                echo "$langChocie language not found, aborting.";
+        user_lang=${OPTARG};
+        if [ "$user_lang" != "english" ]; then       # check if user give english
+            if [ ! -f "lang/$user_lang.sh" ]; then   # abort script if wrong value is given 
+                echo "$user_lang language not found, aborting.";
                 echo -e "usable languages:\nenglish (default)"
                 print_languages;
                 exit 0;
             else
-            . lang/$langChocie.sh &> /dev/null        # when use give english files are not loaded
+            . lang/$user_lang.sh &> /dev/null        # when use give english files are not loaded
             fi
         fi
     ;;
