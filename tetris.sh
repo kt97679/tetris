@@ -29,13 +29,10 @@ script_dir=$(cd $(dirname $0) && pwd) # define script location
 
 # print language for showing usable languages
 print_languages() {
-    if [ ! -d "$script_dir/lang/" ]; then                                   # check if $script_dir/lang/ exist
-        echo "language(s) does not loaded, please check $script_dir/lang/ directory.";
-    else
-        if [ -z "$(ls $script_dir/lang/ 2> /dev/null)" ]; then              # check if $script_dir/lang/ empty
-            echo "language files not found, please insert those.";
-        fi
-    fi        
+    [ -r "$script_dir/lang" ] || {            
+        echo "language(s) doesn't loaded, please check $script_dir/lang directory.";
+        exit 1;
+    }
     ls -I README.md -1t $script_dir/lang/ 2> /dev/null | cut -d'.' -f1;     # print languages
 }
 
@@ -70,16 +67,16 @@ while getopts ":l:h" opt; do
   case ${opt} in
     l )
         user_lang=${OPTARG};
-        if [ "$user_lang" != "english" ]; then       # check if user give english
-            if [ ! -f "$script_dir/lang/$user_lang.sh" ]; then   # abort script if wrong value is given 
-                echo "$user_lang language not found, aborting.";
-                echo -e "usable languages:\nenglish (default)"
-                print_languages;
-                exit 0;
-            else
-            . $script_dir/lang/$user_lang.sh &> /dev/null        # when use give english files are not loaded
-            fi
-        fi
+        [ "$user_lang" != "english" ] && {                   # check if user give english
+            [ -r "$script_dir/lang/$user_lang.sh" ] || {     # check if language file is exist
+                echo "$script_dir/lang/$user_lang.sh doesn't exist"
+                exit 1
+            }
+            . $script_dir/lang/$user_lang.sh || {            # load language file
+                echo "Failed to load $script_dir/lang/$user_lang.sh"
+                exit 1
+            }
+        }
     ;;
     h )
         usage;
@@ -87,7 +84,7 @@ while getopts ":l:h" opt; do
     : )
         echo -e "Missing option argument for -$OPTARG\n" # if value of -l not given
         usage;
-        exit 0;
+        exit 1;
     ;;
   esac
 done
