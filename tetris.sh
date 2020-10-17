@@ -27,20 +27,19 @@
 set -u # non initialized variable is an error
 
 # show usage when given -h argument
-
 usage() {
     print_languages() {
-        if [ ! -d "lang/" ]; then
+        if [ ! -d "lang/" ]; then                                  # check if lang/ exist
             echo "language(s) does not loaded, please check lang/ directory.";
         else
-            if [ -z "$(ls lang/ 2> /dev/null)" ]; then
+            if [ -z "$(ls lang/ 2> /dev/null)" ]; then             # check if lang/ empty
                 echo "language files not found, please insert those."
             fi
         fi        
-        ls -I README.md -1t lang/ 2> /dev/null | cut -d'.' -f1;
+        ls -I README.md -1t lang/ 2> /dev/null | cut -d'.' -f1;     # print languages
     }
 
-    printf "%s\n" \
+    printf "%s\n" \                                                 # prin main usage
         "Usage: $0 [-h] [-l language]" \
         "supported languages:" \
         "english (it is defualt, option not required)" \
@@ -69,15 +68,16 @@ while getopts ":l:h" opt; do
   case ${opt} in
     l )
         langChocie=${OPTARG};
-        if [ "$langChocie" != "english" ]; then
-              . lang/$langChocie.sh &> /dev/null
+        if [ "$langChocie" != "english" ]; then       # check if user give english
+              . lang/$langChocie.sh &> /dev/null      # when use give english files are not loaded
         fi
     ;;
     h )
         usage;
     ;;
     : )
-        echo "Missing option argument for -$OPTARG" # if value of -l not given
+        echo -e "Missing option argument for -$OPTARG\n" # if value of -l not given
+        usage;
         exit 0;
     ;;
   esac
