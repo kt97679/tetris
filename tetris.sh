@@ -69,7 +69,9 @@ while getopts ":l:h" opt; do
   case ${opt} in
     l )
         langChocie=${OPTARG};
-        . lang/$langChocie.sh &> /dev/null
+        if [ "$langChocie" != "english" ]; then
+              . lang/$langChocie.sh &> /dev/null
+        fi
     ;;
     h )
         usage;
