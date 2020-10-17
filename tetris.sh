@@ -17,8 +17,7 @@
 #
 # Author: Kirill Timofeev <kt97679@gmail.com>
 #
-# German, Russian, Turkish and Kurdish Language / Localized Support:
-#		Rojen Zaman <rojen@riseup.net>
+# Localized Support: Rojen Zaman <rojen@riseup.net> | lang/README.md
 #
 # This program is free software. It comes without any warranty, to the extent
 # permitted by applicable law. You can redistribute it and/or modify it under
@@ -32,17 +31,15 @@ function help_page() {
 cat <<EOF
 usage: ./`basename $0` -l <language>
 supported languages:
-    english (it is defualt, option not required)
-    german
-    russian
-    turkish
-    kurdish
+english (it is defualt, option not required)
+$(ls -I README.md -1t lang/ | cut -d'.' -f1)    
 EOF
 exit 0;
 }
 
 # BEGIN OF LANGUAGE LINES
-# default english:
+# if you want see or add other languages, visit lang/ dir and read lang/README.md
+# default localized values english:
 local_LinesComplated="Lines completed: ";
 local_Level="Level:           ";
 local_Score="Score:           ";
@@ -57,103 +54,11 @@ local_ToggleShowNext="n: toggle show next";
 local_ToggleThisHelp="h: toggle this help";
 local_GameOver="Game over!";
 
-# optional german localized:
-function german() {
-    local_LinesComplated="Zeilen abgeschlossen: ";
-    local_Level="Niveau:               ";
-    local_Score="Ergebnis:             ";
-    local_UseCursorKeys="Verwenden Sie die Cursortasten";
-    local_Or="       oder";
-    local_Rotate="    s: drehen";
-    local_LeftRight="a: links,  d: rechts";
-    local_Drop="    leertaste: fallen";
-    local_Quit="      q: verlassen";
-    local_ToggleColor="  c: toggle color";
-    local_ToggleShowNext="n: farbe umschalten";
-    local_ToggleThisHelp="h: schalten sie diese hilfe um";
-    local_GameOver="SPIEL IST AUS!";
-}
-
-# optional russian localized:
-# russian keyboard layout not supported.
-function russian() {
-    local_LinesComplated="ПОЛНЫХ СТРОК: ";
-    local_Level="УРОВЕНЬ:      ";
-    local_Score="СЧЕТ:         ";
-    local_UseCursorKeys="ИСПОЛЬЗУЙТЕ КЛАВИШИ КУРСОРА";
-    local_Or="       ИЛИ";
-    local_Rotate="    S: ПОВОРОТ";
-    local_LeftRight="A: НАЛЕВО,  D: НАПРАВО";
-    local_Drop="    ПРОБЕ́Л: УСКОРИТЬ";
-    local_Quit="      Q: УВОЛИТЬСЯ";
-    local_ToggleColor="  C: ПЕРЕКЛЮЧИ́ТЬ ЦВЕТ";
-    local_ToggleShowNext="N: ПЕРЕКЛЮЧИ́ТЬ ПОКАЗА́ТЬ ДА́ЛЬШЕ";
-    local_ToggleThisHelp="H: ПЕРЕКЛЮЧИТЬ СЛЕДУЮЩИЙ";
-    local_GameOver="ИГРА ОКОНЧЕНА!";
-}
-
-# optional turkish localized:
-function turkish() {
-    local_LinesComplated="Tamamlanan satırlar: ";
-    local_Level="Seviye:              ";
-    local_Score="Skor:                ";
-    local_UseCursorKeys="  Ok tuşlarını kullan";
-    local_Or="       ya da";
-    local_Rotate="    s: döndür";
-    local_LeftRight="a: sol,  d: sağ";
-    local_Drop="    boşluk tuşu: aşağı düşür";
-    local_Quit="      q: çıkış yap";
-    local_ToggleColor="  c: rengi değiştir";
-    local_ToggleShowNext="n: sonraki taşı göster";
-    local_ToggleThisHelp="h: yardım menüsünü göster";
-    local_GameOver="OYUN BİTTİ!";
-}
-
-# optional kurdish localized:
-function kurdish() {
-    local_LinesComplated="Rêzên xilas: ";
-    local_Level="Ast:         ";
-    local_Score="Encam:       ";
-    local_UseCursorKeys="  Tûşên cursor bikarbîne";
-    local_Or="       an jî";
-    local_Rotate="    s: çerx ke";
-    local_LeftRight="a: çep,  d: rast";
-    local_Drop="    tûşa vala: daxe jêr";
-    local_Quit="      q: jê derkeve";
-    local_ToggleColor="  c: rengê bigûherîne";
-    local_ToggleShowNext="n: valayên piştre raberke";
-    local_ToggleThisHelp="h: menûya alîkarîyê nîşan bide";
-    local_GameOver="Lîstik qedîya!";
-}
-
-# check language values, if not correct program will aborted. 
-function check_lang() {
-    if [ "$langChocie" ==  "german" ]; then
-        german;
-    else
-        if [ "$langChocie" == "russian" ]; then
-            russian;
-        else
-            if [ "$langChocie" == "turkish" ]; then
-                turkish;
-            else
-                if [ "$langChocie" == "kurdish" ]; then
-                    kurdish;
-                else
-                    echo "bad option, aborting."
-                    exit 0;
-                fi
-            fi
-        fi
-    fi
-}
-
-# check opional arguments
 while getopts ":l:h" opt; do
   case ${opt} in
     l )
         langChocie=${OPTARG};
-        check_lang;
+        . lang/$langChocie.sh &> /dev/null
     ;;
     h )
         help_page;
