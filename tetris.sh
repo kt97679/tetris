@@ -17,7 +17,7 @@
 #
 # Author: Kirill Timofeev <kt97679@gmail.com>
 #
-# Localized Support: Rojen Zaman <rojen@riseup.net> | lang/README.md
+# Localized Support: Rojen Zaman <rojen@riseup.net> | $script_dir/lang/README.md
 #
 # This program is free software. It comes without any warranty, to the extent
 # permitted by applicable law. You can redistribute it and/or modify it under
@@ -25,17 +25,18 @@
 # published by Sam Hocevar. See http://www.wtfpl.net/ for more details.
 
 set -u # non initialized variable is an error
+script_dir=$(cd $(dirname $0) && pwd) # define script location
 
 # print language for showing usable languages
 print_languages() {
-    if [ ! -d "lang/" ]; then                                   # check if lang/ exist
-        echo "language(s) does not loaded, please check lang/ directory.";
+    if [ ! -d "$script_dir/lang/" ]; then                                   # check if $script_dir/lang/ exist
+        echo "language(s) does not loaded, please check $script_dir/lang/ directory.";
     else
-        if [ -z "$(ls lang/ 2> /dev/null)" ]; then              # check if lang/ empty
+        if [ -z "$(ls $script_dir/lang/ 2> /dev/null)" ]; then              # check if $script_dir/lang/ empty
             echo "language files not found, please insert those.";
         fi
     fi        
-    ls -I README.md -1t lang/ 2> /dev/null | cut -d'.' -f1;     # print languages
+    ls -I README.md -1t $script_dir/lang/ 2> /dev/null | cut -d'.' -f1;     # print languages
 }
 
 # show usage when given -h argument
@@ -49,7 +50,7 @@ usage() {
 }
 
 # BEGIN OF LANGUAGE LINES
-# if you want see or add other languages, visit lang/ dir and read lang/README.md
+# if you want see or add other languages, visit $script_dir/lang/ dir and read $script_dir/lang/README.md
 # default localized values english:
 local_LinesCompleted="Lines completed: ";
 local_Level="Level:           ";
@@ -70,13 +71,13 @@ while getopts ":l:h" opt; do
     l )
         user_lang=${OPTARG};
         if [ "$user_lang" != "english" ]; then       # check if user give english
-            if [ ! -f "lang/$user_lang.sh" ]; then   # abort script if wrong value is given 
+            if [ ! -f "$script_dir/lang/$user_lang.sh" ]; then   # abort script if wrong value is given 
                 echo "$user_lang language not found, aborting.";
                 echo -e "usable languages:\nenglish (default)"
                 print_languages;
                 exit 0;
             else
-            . lang/$user_lang.sh &> /dev/null        # when use give english files are not loaded
+            . $script_dir/lang/$user_lang.sh &> /dev/null        # when use give english files are not loaded
             fi
         fi
     ;;
