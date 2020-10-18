@@ -530,7 +530,6 @@ at_exit() {
     echo -e "$screen_buffer"                     # ... print final message ...
     show_cursor
     stty $stty_g                                 # ... and restore terminal state
-    read -rsn1                                   # ... press any key to exit ...
 }
 
 # this function runs in separate process
