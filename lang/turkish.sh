@@ -1,15 +1,15 @@
 #!/bin/bash
 
-local_LinesCompleted="Tamamlanan satırlar: ";
-local_Level="Seviye:              ";
-local_Score="Skor:                ";
-local_UseCursorKeys="  Ok tuşlarını kullan";
-local_Or="       ya da";
-local_Rotate="    s: döndür";
-local_LeftRight="a: sol,  d: sağ";
-local_Drop="    boşluk tuşu: aşağı düşür";
-local_Quit="      q: çıkış yap";
-local_ToggleColor="  c: rengi değiştir";
-local_ToggleShowNext="n: sonraki taşı göster";
-local_ToggleThisHelp="h: yardım menüsünü göster";
-local_GameOver="OYUN BİTTİ!";
+i18n_lines_completed="Tamamlanan satırlar: ";
+i18n_level="Seviye:              ";
+i18n_score="Skor:                ";
+i18n_use_cursor_keys="  Ok tuşlarını kullan";
+i18n_or="       ya da";
+i18n_rotate="    s: döndür";
+i18n_left_right="a: sol,  d: sağ";
+i18n_drop="    boşluk tuşu: aşağı düşür";
+i18n_quit="      q: çıkış yap";
+i18n_toggle_color="  c: rengi değiştir";
+i18n_toggle_show_netx="n: sonraki taşı göster";
+i18n_toggle_this_help="h: yardım menüsünü göster";
+i18n_game_over="OYUN BİTTİ!";

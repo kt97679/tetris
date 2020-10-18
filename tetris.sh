@@ -44,19 +44,19 @@ usage() {
 # BEGIN OF LANGUAGE LINES
 # if you want see or add other languages, visit $script_dir/lang/ dir and read $script_dir/lang/README.md
 # default localized values english:
-local_LinesCompleted="Lines completed: ";
-local_Level="Level:           ";
-local_Score="Score:           ";
-local_UseCursorKeys="  Use cursor keys";
-local_Or="       or";
-local_Rotate="    s: rotate";
-local_LeftRight="a: left,  d: right";
-local_Drop="    space: drop";
-local_Quit="      q: quit";
-local_ToggleColor="  c: toggle color";
-local_ToggleShowNext="n: toggle show next";
-local_ToggleThisHelp="h: toggle this help";
-local_GameOver="Game over!";
+i18n_lines_completed="Lines completed: ";
+i18n_level="Level:           ";
+i18n_score="Score:           ";
+i18n_use_cursor_keys="  Use cursor keys";
+i18n_or="       or";
+i18n_rotate="    s: rotate";
+i18n_left_right="a: left,  d: right";
+i18n_drop="    space: drop";
+i18n_quit="      q: quit";
+i18n_toggle_color="  c: toggle color";
+i18n_toggle_show_netx="n: toggle show next";
+i18n_toggle_this_help="h: toggle this help";
+i18n_game_over="Game over!";
 
 while getopts ":l:h" opt; do
   case ${opt} in
@@ -225,22 +225,22 @@ update_score() {
     fi
     set_bold
     set_fg $SCORE_COLOR
-    xyprint $SCORE_X $SCORE_Y         "$local_LinesCompleted$lines_completed"
-    xyprint $SCORE_X $((SCORE_Y + 1)) "$local_Level$level"
-    xyprint $SCORE_X $((SCORE_Y + 2)) "$local_Score$score"
+    xyprint $SCORE_X $SCORE_Y         "$i18n_lines_completed$lines_completed"
+    xyprint $SCORE_X $((SCORE_Y + 1)) "$i18n_level$level"
+    xyprint $SCORE_X $((SCORE_Y + 2)) "$i18n_score$score"
     reset_colors
 }
 
 help=(
-"$local_UseCursorKeys"
-"$local_Or"
-"$local_Rotate"
-"$local_LeftRight"
-"$local_Drop"
-"$local_Quit"
-"$local_ToggleColor"
-"$local_ToggleShowNext"
-"$local_ToggleThisHelp"
+"$i18n_use_cursor_keys"
+"$i18n_or"
+"$i18n_rotate"
+"$i18n_left_right"
+"$i18n_drop"
+"$i18n_quit"
+"$i18n_toggle_color"
+"$i18n_toggle_show_netx"
+"$i18n_toggle_this_help"
 )
 
 help_on=1 # if this flag is 1 help is shown
@@ -526,7 +526,7 @@ stty_g=$(stty -g)              # let's save terminal state ...
 
 at_exit() {
     kill $ticker_pid                             # let's kill ticker process ...
-    xyprint $GAMEOVER_X $GAMEOVER_Y "$local_GameOver"
+    xyprint $GAMEOVER_X $GAMEOVER_Y "$i18n_game_over"
     echo -e "$screen_buffer"                     # ... print final message ...
     show_cursor
     stty $stty_g                                 # ... and restore terminal state
