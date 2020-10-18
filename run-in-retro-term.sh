@@ -19,18 +19,13 @@ usage() {
 
 # check cool-retro-term and xdg-open commands
 check_commands() {
-    if ! command -v xdg-open &>$stdout
-    then
-        echo -e "xdg-open could not be found, please install it.\naborting."
-        echo "if sure you at the gnu operating systems?  :)"
-        exit 1
-    fi
-
-    if ! command -v cool-retro-term &>$stdout
-    then
-        echo -e "cool-retro-term could not be found, please install it.\naborting."
-        exit 1
-    fi
+    local message=()
+    command -v xdg-open &>$stdout || message+="xdg-open could not be found, please install it"
+    command -v cool-retro-term &>$stdout || message+="cool-retro-term could not be found, please install it"
+    [ ${#message} == 0 ] && return 0
+    printf "%s\n" "${message[@]}"
+    echo "Are you sure you are using GNU operating system ;-)?"
+    exit 1
 }
 
 # main script
