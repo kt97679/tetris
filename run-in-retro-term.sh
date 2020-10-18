@@ -4,9 +4,8 @@
 # Author: Rojen Zaman <rojen@riseup.net>
 # License: WTFPL
 
-set -u                                                    # return error if string null
-stdout="/dev/null"                                        # default stdout, optional verbose mode is /dev/stdout
-script_dir=$(dirname $(readlink -f $0))                     # script dir, it is require for cool-retro-term
+stdout="/dev/null"                                              # default stdout, optional verbose mode is /dev/stdout
+script_dir=$(dirname $(readlink -f $0))                         # script dir, it is require for cool-retro-term
 
 # usage
 usage() {
@@ -58,4 +57,5 @@ while getopts ":hv" opt; do                                     # check script
 done 
 
 check_commands                                                  # check commands before run script
+set -u                                                          # return error if string null
 main                                                            # program start here
