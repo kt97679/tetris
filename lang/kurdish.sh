@@ -10,7 +10,7 @@ i18n_left_right="a: çep,  d: rast";
 i18n_drop="    bişkoka valahiyê: bixe jêr";
 i18n_quit="      q: derkeve";
 i18n_toggle_color="  c: rengê biguherîne";
-i18n_toggle_show_netx="n: bişkoka pêşve nîşan bide";
+i18n_toggle_show_next="n: bişkoka pêşve nîşan bide";
 i18n_toggle_this_help="h: menuya alîkariyê nîşan bide";
 i18n_game_over="LÎSTIK BI DAWÎ BÛ!";
 

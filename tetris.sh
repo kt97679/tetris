@@ -54,7 +54,7 @@ i18n_left_right="a: left,  d: right";
 i18n_drop="    space: drop";
 i18n_quit="      q: quit";
 i18n_toggle_color="  c: toggle color";
-i18n_toggle_show_netx="n: toggle show next";
+i18n_toggle_show_next="n: toggle show next";
 i18n_toggle_this_help="h: toggle this help";
 i18n_game_over="Game over!";
 
@@ -239,7 +239,7 @@ help=(
 "$i18n_drop"
 "$i18n_quit"
 "$i18n_toggle_color"
-"$i18n_toggle_show_netx"
+"$i18n_toggle_show_next"
 "$i18n_toggle_this_help"
 )
 

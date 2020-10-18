@@ -10,6 +10,6 @@ i18n_left_right="a: links,  d: rechts";
 i18n_drop="    leertaste: fallen";
 i18n_quit="      q: verlassen";
 i18n_toggle_color="  c: toggle color";
-i18n_toggle_show_netx="n: farbe umschalten";
+i18n_toggle_show_next="n: farbe umschalten";
 i18n_toggle_this_help="h: schalten sie diese hilfe um";
 i18n_game_over="SPIEL IST AUS!";
