@@ -25,7 +25,7 @@
 # published by Sam Hocevar. See http://www.wtfpl.net/ for more details.
 
 set -u # non initialized variable is an error
-script_dir=$(cd $(dirname $0) && pwd) # define script location
+script_dir=$(dirname $(readlink -f $0)) # define script location
 
 # show usage when given -h argument 
 usage() {

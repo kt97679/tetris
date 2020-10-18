@@ -6,7 +6,7 @@
 
 set -u                                                    # return error if string null
 stdout="/dev/null"                                        # default stdout, optional verbose mode is /dev/stdout
-script_dir=$(cd $(dirname $0) && pwd)                     # script dir, it is require for cool-retro-term
+script_dir=$(dirname $(readlink -f $0))                     # script dir, it is require for cool-retro-term
 
 # usage
 usage() {
