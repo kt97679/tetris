@@ -10,7 +10,7 @@ Tetris 1984 simulation with `cool-retro-term`.
 
 ### Tetris 1984 With Cool-Retro-Term: 
 
-<img src="media/retro-term.png" width="100%" alt="Cool-Retro-Term">
+<img src="media/retro-term.jpeg" width="100%" alt="Cool-Retro-Term">
 
 ## Usage
 ```text
@@ -19,7 +19,7 @@ usage : ./run-in-retro-term.sh [-h] [-v]
 -h   help
 -v   verbose
 ```
-Run `tetris` for executing in Retro Term with background playing [music](media/tetris-theme.mp3).
+Run `tetris` for executing in Retro Term with background playing [music](media/tetris-theme.ogg).
 
 
 ```bash

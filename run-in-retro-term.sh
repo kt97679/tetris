@@ -39,7 +39,7 @@ main() {
     run_music() {
         while :
         do                                                      # play music with xdg-open
-            xdg-open "$script_dir/media/tetris-theme.mp3" &>$stdout
+            xdg-open "$script_dir/media/tetris-theme.ogg" &>$stdout
             sleep 85                                           # sleep 85, 85 is total of music time.
         done
     }
@@ -50,7 +50,7 @@ main() {
     echo "exit from cool-retro-term"
 
     kill $! &>$stdout                                           # kill music loop
-    fuser -k -TERM $script_dir/media/tetris-theme.mp3 &>$stdout # fuse music after program stopped
+    fuser -k -TERM $script_dir/media/tetris-theme.ogg &>$stdout # fuse music after program stopped
     echo "music stopped.."
 }
 
