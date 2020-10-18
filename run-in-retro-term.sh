@@ -10,12 +10,11 @@ script_dir=$(dirname $(readlink -f $0))                     # script dir, it is 
 
 # usage
 usage() {
-cat <<- EOT    
-usage : $0 [-h] [-v]
--h   help
--v   verbose
-EOT
-exit 0
+    printf "%s\n" \
+        "usage : $0 [-h] [-v]" \
+        " -h   help" \
+        " -v   verbose"
+    exit 0
 }
 
 # check cool-retro-term and xdg-open commands
