@@ -52,13 +52,8 @@ main() {
 
 while getopts ":hv" opt; do                                     # check script
   case ${opt} in
-    h )
-        usage
-        exit 0
-      ;;  
-    v )
-        stdout="/dev/stdout"                                    # verbose mode
-      ;;
+    h ) usage ;;
+    v ) stdout="/dev/tty" ;;                                    # verbose mode
   esac
 done 
 
