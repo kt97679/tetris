@@ -28,15 +28,17 @@ check_commands() {
     exit 1
 }
 
+# music loop
+run_music() {
+    while :
+    do                                                          # play music with xdg-open
+        xdg-open "$script_dir/media/tetris-theme.ogg" &>$stdout
+        sleep 85                                                # sleep 85, 85 is total of music time.
+    done
+}
+
 # main script
 main() {
-    run_music() {
-        while :
-        do                                                      # play music with xdg-open
-            xdg-open "$script_dir/media/tetris-theme.ogg" &>$stdout
-            sleep 85                                           # sleep 85, 85 is total of music time.
-        done
-    }
     echo "tetris theme is loading.."                            # music message
     run_music &                                                 # run music loop at background
     sleep 1;                                                    # sleep 1 for script run after playing the music.
