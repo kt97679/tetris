@@ -27,23 +27,18 @@
 set -u # non initialized variable is an error
 script_dir=$(cd $(dirname $0) && pwd) # define script location
 
-# print language for showing usable languages
-print_languages() {
-    [ -r "$script_dir/lang" ] || {            
-        echo "language(s) doesn't loaded, please check $script_dir/lang directory.";
-        exit 1;
-    }
-    ls -I README.md -1t $script_dir/lang/ 2> /dev/null | cut -d'.' -f1;     # print languages
-}
-
-# show usage when given -h argument
+# show usage when given -h argument 
 usage() {
-    printf "%s\n" \
-        "usage: $0 [-h] [-l language]" \
-        "supported languages:" \
-        "english (it is defualt, option not required)" \
-        "$(print_languages)"
-    exit 0;
+    local available_languages=$(ls -I README.md $script_dir/lang/ 2>/dev/null | cut -d. -f1)    # show available languages
+    echo "usage: $0 [-h] [-l language]"
+    if [ -z "$available_languages" ] ; then
+        echo "This script supports localization via language files that can be put into $script_dir/lang"
+        echo "Please see https://github.com/kt97679/tetris/blob/master/lang/README.md for more details"
+    else
+        echo "available languages:"
+        ( echo "english (default)" && echo "$available_languages") | sort
+    fi
+    exit 0
 }
 
 # BEGIN OF LANGUAGE LINES
