@@ -11,13 +11,17 @@ hl=${VARIABLE:-english}                                                         
 console_profile=${VARIABLE:-Monochrome Green}                                           # default console profile
 available_languages=$(ls -I README.md $script_dir/lang/ 2>/dev/null | cut -d. -f1)      # https://github.com/rojen/tetris/blob/master/lang/README.md
 
-usage_message_1() {
+usage_message_0() {
 printf "%s\n" \
     "" \
     "usage : $0 [-h] [-v] [-s PL] [-c console]" \
     "" \
     " -h     help" \
-    " -v     verbose" \
+    " -v     verbose"
+}
+
+usage_message_1() {
+printf "%s\n" \
     "" \
     " -s     select programming language of tetris" \
     "    c" \
@@ -55,6 +59,7 @@ printf "%s\n" \
 
 # usage
 usage() {
+    usage_message_0
     usage_message_1
     usage_message_2
     usage_message_3
