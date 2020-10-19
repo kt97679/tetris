@@ -125,7 +125,7 @@ done
 
 check_commands                                                                          # check commands before run script
 set -u                                                                                  # return error if string null
-check_hl                                                                                # check hl specifion
 check_pl                                                                                # check pl specifion
+check_hl                                                                                # check hl specifion
 main                                                                                    # program start here
 rm $script_dir/retro_term_command.sh &>$stdout                                          # delete trash file
