@@ -46,17 +46,18 @@ check_commands() {
 }
 
 # check option arguments
-check_pl() {
-    [[ "$pl" =~ ^(bash|c|java|javascript|perl|python|ruby)$ ]] || {                     # check pl       
-        echo "$pl is not supported yet, aborting."
-        exit 1                                                                          # stop if wrong pl given
-    }
-}
-
 check_hl() {
     [ "$pl" != "bash" ] && {                                                            # default language is english, see 10th line
         echo "only bash support internationalization, aborting."
         exit 1
+    }
+}
+
+check_pl() {
+    [[ "$pl" =~ ^(bash|c|java|javascript|perl|python|ruby)$ ]] || {                     # check pl       
+        echo "$pl is not supported yet, aborting."
+        check_hl
+        exit 1                                                                          # stop if wrong pl given
     }
 }
 
