@@ -8,7 +8,7 @@ stdout="/dev/null"                                                              
 script_dir=$(dirname $(readlink -f $0))                                                 # script dir, it is required for cool-retro-term
 pl=${VARIABLE:-bash}                                                                    # if pl not specified return bash
 hl=${VARIABLE:-english}                                                                 # default language for bash
-console_profile="Monochrome Green"                                                      # default console profile
+console_profile=${VARIABLE:-Monochrome Green}                                           # default console profile
 available_languages=$(ls -I README.md $script_dir/lang/ 2>/dev/null | cut -d. -f1)      # https://github.com/rojen/tetris/blob/master/lang/README.md
 
 usage_message_1() {
@@ -28,7 +28,7 @@ printf "%s\n" \
     "    ruby" \
     "" \
     "    bash [-l language]  select human language of tetris (only work with bash):"
-}      
+}
 
 usage_message_2() {
 printf "%s\n" \
@@ -82,7 +82,7 @@ check_hl() {
 }
 
 check_pl() {
-    [[ "$pl" =~ ^(bash|c|java|javascript|perl|python|ruby)$ ]] || {                     # check pl       
+    [[ "$pl" =~ ^(bash|c|java|javascript|perl|python|ruby)$ ]] || {                     # check pl
         echo "$pl is not supported yet, aborting."
         usage_message_1
         usage_message_3
@@ -140,7 +140,7 @@ main() {
     --profile "$console_profile" \
     -e bash -c \
     "$exec_tetris;read -rsn1 -p 'Press any key to exit'" &>$stdout                      # execute specified pl - press any key to exit  / if there is a execute error it shows the reason - default console profile
-    echo "exit from cool-retro-term"                                                    # exit retro message
+    echo "exit from cool-retro-term / $console_profile"                                 # exit retro message
     kill $! &>$stdout                                                                   # kill music loop
     fuser -k -TERM $script_dir/media/tetris-theme.ogg &>$stdout                         # fuse music after program stopped
     echo "music stopped.."
