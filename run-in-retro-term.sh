@@ -146,7 +146,7 @@ main() {
     echo "music stopped.."
 }
 
-while getopts ":hvs:l:c:" opt; do                                                         # check script
+while getopts ":hvs:l:c:" opt; do                                                       # check script
   case ${opt} in
     h ) usage ;;
     v ) stdout="/dev/tty" ;;                                                            # verbose mode
