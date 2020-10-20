@@ -117,9 +117,9 @@ load_exec() {
     [ "$pl" == "c" ] && exec_tetris="gcc $script_dir/tetris.c -o /tmp/tetris && /tmp/tetris"
     [ "$pl" == "java" ] && exec_tetris="javac -d /tmp/ $script_dir/Tetris.java && java -classpath /tmp Tetris"
     [ "$pl" == "javascript" ] && exec_tetris="node $script_dir/tetris.js"
-    [ "$pl" == "perl" ] &&  exec_tetris="perl $script_dir/tetris.pl"
-    [ "$pl" == "python" ] &&  exec_tetris="python $script_dir/tetris.py"
-    [ "$pl" == "ruby" ] &&  exec_tetris="ruby $script_dir/tetris.rb "
+    [ "$pl" == "perl" ] &&  exec_tetris="$script_dir/tetris.pl"
+    [ "$pl" == "python" ] &&  exec_tetris="$script_dir/tetris.py"
+    [ "$pl" == "ruby" ] &&  exec_tetris="$script_dir/tetris.rb "
 }
 
 # load console profile, defaul is Monochrome Green
