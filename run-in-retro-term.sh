@@ -9,9 +9,9 @@ script_dir=$(dirname $(readlink -f $0))                                         
 pl=${VARIABLE:-bash}                                                                    # if pl not specified return bash
 hl=${VARIABLE:-english}                                                                 # default language for bash
 cp=${VARIABLE:-2}                                                                       # default console profile
-available_languages=$(ls -I README.md $script_dir/lang/ 2>/dev/null | cut -d. -f1)      # https://github.com/rojen/tetris/blob/master/lang/README.md
+available_languages=$(ls -I README.md $script_dir/lang/ 2>/dev/null | cut -d. -f1)      # https://github.com/rojenzaman/tetris/blob/master/lang/README.md
 
-usage_message_0() {
+usage_code() {
 printf "%s\n" \
     "" \
     "usage : $0 [-h] [-v] [-s PL] [-c console]" \
@@ -20,7 +20,7 @@ printf "%s\n" \
     " -v     verbose"
 }
 
-usage_message_1() {
+usage_programming_languages() {
 printf "%s\n" \
     "" \
     " -s     select programming language of tetris" \
@@ -34,7 +34,7 @@ printf "%s\n" \
     "    bash [-l language]  select human language of tetris (only work with bash):"
 }
 
-usage_message_2() {
+usage_i18n() {
 printf "%s\n" \
     "" \
     "english" \
@@ -42,7 +42,7 @@ printf "%s\n" \
     ""
 }
 
-usage_message_3() {
+usage_console_profile() {
 printf "%s\n" \
     "" \
     " -c    console profile" \
@@ -59,10 +59,10 @@ printf "%s\n" \
 
 # usage
 usage() {
-    usage_message_0
-    usage_message_1
-    usage_message_2
-    usage_message_3
+    usage_code
+    usage_programming_languages
+    usage_i18n
+    usage_console_profile
     exit 0
 }
 
@@ -81,7 +81,7 @@ check_commands() {
 check_hl() {
     [ "$pl" != "bash" ] && {                                                            # default language is english, see 10th line
         echo "only bash support internationalization, aborting."
-        usage_message_2
+        usage_i18n
         exit 1
     }
 }
@@ -89,16 +89,16 @@ check_hl() {
 check_pl() {
     [[ "$pl" =~ ^(bash|c|java|javascript|perl|python|ruby)$ ]] || {                     # check pl
         echo "$pl is not supported yet, aborting."
-        usage_message_1
-        usage_message_3
+        usage_programming_languages
+        usage_console_profile
         exit 1                                                                          # stop if wrong pl given
     }
 }
 
 check_console_profile() {
-    [[ $cp =~ ^(1|2|3|4|5|6|7|8|9)$ ]] || {                                # check console profile
+    [[ $cp =~ ^(1|2|3|4|5|6|7|8|9)$ ]] || {                                             # check console profile
         echo "console profile $cp not finded."
-        usage_message_3
+        usage_console_profile
         exit 1
     }
 }
