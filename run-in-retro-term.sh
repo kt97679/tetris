@@ -8,7 +8,7 @@ stdout="/dev/null"                                                              
 script_dir=$(dirname $(readlink -f $0))                                                 # script dir, it is required for cool-retro-term
 pl=${VARIABLE:-bash}                                                                    # if pl not specified return bash
 hl=${VARIABLE:-english}                                                                 # default language for bash
-console_profile=${VARIABLE:-Monochrome Green}                                           # default console profile
+cp=${VARIABLE:-2}                                                                       # default console profile
 available_languages=$(ls -I README.md $script_dir/lang/ 2>/dev/null | cut -d. -f1)      # https://github.com/rojen/tetris/blob/master/lang/README.md
 
 usage_message_0() {
@@ -96,8 +96,8 @@ check_pl() {
 }
 
 check_console_profile() {
-    [[ $console_profile =~ ^(1|2|3|4|5|6|7|8|9)$ ]] || {                                # check console profile
-        echo "console profile $console_profile not finded."
+    [[ $cp =~ ^(1|2|3|4|5|6|7|8|9)$ ]] || {                                # check console profile
+        echo "console profile $cp not finded."
         usage_message_3
         exit 1
     }
@@ -124,15 +124,15 @@ load_exec() {
 
 # load console profile, defaul is Monochrome Green
 load_console_profile() {
-    [ "$console_profile" = "1" ] && console_profile="Default Amber"
-    [ "$console_profile" = "2" ] && console_profile="Monochrome Green"
-    [ "$console_profile" = "3" ] && console_profile="Green Scanlines"
-    [ "$console_profile" = "4" ] && console_profile="Default Pixelated"
-    [ "$console_profile" = "5" ] && console_profile="Apple ]["
-    [ "$console_profile" = "6" ] && console_profile="Vintage"
-    [ "$console_profile" = "7" ] && console_profile="IBM Dos"
-    [ "$console_profile" = "8" ] && console_profile="IBM 3278"
-    [ "$console_profile" = "9" ] && console_profile="Futuristic"
+    console_profile[1]="Default Amber"
+    console_profile[2]="Monochrome Green"
+    console_profile[3]="Green Scanlines"
+    console_profile[4]="Default Pixelated"
+    console_profile[5]="Apple ]["
+    console_profile[6]="Vintage"
+    console_profile[7]="IBM Dos"
+    console_profile[8]="IBM 3278"
+    console_profile[9]="Futuristic"
 }
 
 # main script
@@ -142,10 +142,10 @@ main() {
     sleep 1                                                                             # sleep 1 for script run after playing the music.
     cool-retro-term \
     --fullscreen \
-    --profile "$console_profile" \
+    --profile "${console_profile[$cp]}" \
     -e bash -c \
     "$exec_tetris;read -rsn1 -p 'Press any key to exit'" &>$stdout                      # execute specified pl - press any key to exit  / if there is a execute error it shows the reason - default console profile
-    echo "exit from cool-retro-term / $console_profile"                                 # exit retro message
+    echo "exit from cool-retro-term / ${console_profile[$cp]}"                          # exit retro message
     kill $! &>$stdout                                                                   # kill music loop
     fuser -k -TERM $script_dir/media/tetris-theme.ogg &>$stdout                         # fuse music after program stopped
     echo "music stopped.."
@@ -157,7 +157,7 @@ while getopts ":hvs:l:c:" opt; do                                               
     v ) stdout="/dev/tty" ;;                                                            # verbose mode
     s ) pl=${OPTARG}; check_pl ;;                                                       # set and check pl specification
     l ) hl=${OPTARG}; check_hl ;;                                                       # set and check hl specification
-    c ) console_profile=${OPTARG}; check_console_profile ;;                             # set and check console profile
+    c ) cp=${OPTARG}; check_console_profile ;;                                          # set and check console profile
     : ) echo -e "Missing option argument for -$OPTARG\n"; usage; exit 1 ;;
   esac
 done
