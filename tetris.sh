@@ -17,12 +17,71 @@
 #
 # Author: Kirill Timofeev <kt97679@gmail.com>
 #
+# Localized Support: Rojen Zaman <rojen@riseup.net> | lang/README.md
+#
 # This program is free software. It comes without any warranty, to the extent
 # permitted by applicable law. You can redistribute it and/or modify it under
 # the terms of the Do What The Fuck You Want To Public License, Version 2, as
 # published by Sam Hocevar. See http://www.wtfpl.net/ for more details.
 
 set -u # non initialized variable is an error
+script_dir=$(dirname $(readlink -f $0)) # define script location
+
+# show usage when given -h argument 
+usage() {
+    local available_languages=$(ls -I README.md $script_dir/lang/ 2>/dev/null | cut -d. -f1)    # show available languages
+    echo "usage: $0 [-h] [-l language]"
+    if [ -z "$available_languages" ] ; then
+        echo "This script supports localization via language files that can be put into $script_dir/lang"
+        echo "Please see https://github.com/kt97679/tetris/blob/master/lang/README.md for more details"
+    else
+        echo "available languages:"
+        ( echo "english (default)" && echo "$available_languages") | sort
+    fi
+    exit 0
+}
+
+# BEGIN OF LANGUAGE LINES
+# if you want see or add other languages, visit $script_dir/lang/ dir and read $script_dir/lang/README.md
+# default localized values english:
+i18n_lines_completed="Lines completed: "
+i18n_level="Level:           "
+i18n_score="Score:           "
+i18n_use_cursor_keys="  Use cursor keys"
+i18n_or="       or"
+i18n_rotate="    s: rotate"
+i18n_left_right="a: left,  d: right"
+i18n_drop="    space: drop"
+i18n_quit="      q: quit"
+i18n_toggle_color="  c: toggle color"
+i18n_toggle_show_next="n: toggle show next"
+i18n_toggle_this_help="h: toggle this help"
+i18n_game_over="Game over!"
+
+while getopts ":l:h" opt; do
+  case ${opt} in
+    l )
+        user_lang=${OPTARG}
+        [ "$user_lang" != "english" ] && {                                          # check if user give english
+            [ -r "$script_dir/lang/$user_lang.sh" ] || {                            # check if language file is exist
+                echo "$script_dir/lang/$user_lang.sh doesn't exist"
+                exit 1
+            }
+            . $script_dir/lang/$user_lang.sh || {                                   # load language file
+                echo "Failed to load $script_dir/lang/$user_lang.sh"
+                exit 1
+            }
+        }
+    ;;
+    h ) usage ;;
+    : )
+        echo -e "Missing option argument for -$OPTARG\n"                            # if value of -l not given
+        usage
+        exit 1
+    ;;
+  esac
+done
+# END OF LANGUAGE LINES
 
 # Those are commands sent to controller by key press processing code
 # In controller they are used as index to retrieve actual functuon from array
@@ -164,22 +223,22 @@ update_score() {
     fi
     set_bold
     set_fg $SCORE_COLOR
-    xyprint $SCORE_X $SCORE_Y         "Lines completed: $lines_completed"
-    xyprint $SCORE_X $((SCORE_Y + 1)) "Level:           $level"
-    xyprint $SCORE_X $((SCORE_Y + 2)) "Score:           $score"
+    xyprint $SCORE_X $SCORE_Y         "$i18n_lines_completed$lines_completed"
+    xyprint $SCORE_X $((SCORE_Y + 1)) "$i18n_level$level"
+    xyprint $SCORE_X $((SCORE_Y + 2)) "$i18n_score$score"
     reset_colors
 }
 
 help=(
-"  Use cursor keys"
-"       or"
-"    s: rotate"
-"a: left,  d: right"
-"    space: drop"
-"      q: quit"
-"  c: toggle color"
-"n: toggle show next"
-"h: toggle this help"
+"$i18n_use_cursor_keys"
+"$i18n_or"
+"$i18n_rotate"
+"$i18n_left_right"
+"$i18n_drop"
+"$i18n_quit"
+"$i18n_toggle_color"
+"$i18n_toggle_show_next"
+"$i18n_toggle_this_help"
 )
 
 help_on=1 # if this flag is 1 help is shown
@@ -465,7 +524,7 @@ stty_g=$(stty -g)              # let's save terminal state ...
 
 at_exit() {
     kill $ticker_pid                             # let's kill ticker process ...
-    xyprint $GAMEOVER_X $GAMEOVER_Y "Game over!"
+    xyprint $GAMEOVER_X $GAMEOVER_Y "$i18n_game_over"
     echo -e "$screen_buffer"                     # ... print final message ...
     show_cursor
     stty $stty_g                                 # ... and restore terminal state
