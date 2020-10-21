@@ -44,42 +44,40 @@ usage() {
 # BEGIN OF LANGUAGE LINES
 # if you want see or add other languages, visit $script_dir/lang/ dir and read $script_dir/lang/README.md
 # default localized values english:
-i18n_lines_completed="Lines completed: ";
-i18n_level="Level:           ";
-i18n_score="Score:           ";
-i18n_use_cursor_keys="  Use cursor keys";
-i18n_or="       or";
-i18n_rotate="    s: rotate";
-i18n_left_right="a: left,  d: right";
-i18n_drop="    space: drop";
-i18n_quit="      q: quit";
-i18n_toggle_color="  c: toggle color";
-i18n_toggle_show_next="n: toggle show next";
-i18n_toggle_this_help="h: toggle this help";
-i18n_game_over="Game over!";
+i18n_lines_completed="Lines completed: "
+i18n_level="Level:           "
+i18n_score="Score:           "
+i18n_use_cursor_keys="  Use cursor keys"
+i18n_or="       or"
+i18n_rotate="    s: rotate"
+i18n_left_right="a: left,  d: right"
+i18n_drop="    space: drop"
+i18n_quit="      q: quit"
+i18n_toggle_color="  c: toggle color"
+i18n_toggle_show_next="n: toggle show next"
+i18n_toggle_this_help="h: toggle this help"
+i18n_game_over="Game over!"
 
 while getopts ":l:h" opt; do
   case ${opt} in
     l )
-        user_lang=${OPTARG};
-        [ "$user_lang" != "english" ] && {                   # check if user give english
-            [ -r "$script_dir/lang/$user_lang.sh" ] || {     # check if language file is exist
+        user_lang=${OPTARG}
+        [ "$user_lang" != "english" ] && {                                          # check if user give english
+            [ -r "$script_dir/lang/$user_lang.sh" ] || {                            # check if language file is exist
                 echo "$script_dir/lang/$user_lang.sh doesn't exist"
                 exit 1
             }
-            . $script_dir/lang/$user_lang.sh || {            # load language file
+            . $script_dir/lang/$user_lang.sh || {                                   # load language file
                 echo "Failed to load $script_dir/lang/$user_lang.sh"
                 exit 1
             }
         }
     ;;
-    h )
-        usage;
-    ;;
+    h ) usage ;;
     : )
-        echo -e "Missing option argument for -$OPTARG\n" # if value of -l not given
-        usage;
-        exit 1;
+        echo -e "Missing option argument for -$OPTARG\n"                            # if value of -l not given
+        usage
+        exit 1
     ;;
   esac
 done
