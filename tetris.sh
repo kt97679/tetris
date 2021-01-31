@@ -74,7 +74,7 @@ NEXT_Y=11
 GAMEOVER_X=1
 GAMEOVER_Y=$((PLAYFIELD_H + 3))
 
-# Intervals after which game level (and game speed) is increased 
+# Intervals after which game level (and game speed) is increased
 LEVEL_UP=20
 
 colors=($RED $GREEN $YELLOW $BLUE $FUCHSIA $CYAN $WHITE)
@@ -307,7 +307,7 @@ get_random_next() {
     # now let's get next piece
     ((next_piece = RANDOM % ${#piece[@]}))
     ((next_piece_rotation = RANDOM % (${#piece[$next_piece]} / 8)))
-    ((next_piece_color = RANDOM % ${#colors[@]}))
+    ((next_piece_color = (${colors[$next_piece]})))
     show_next
 }
 
